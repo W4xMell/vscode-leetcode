@@ -34,7 +34,7 @@ export class LeetCodeTreeDataProvider implements vscode.TreeDataProvider<LeetCod
                 label: element.name,
                 collapsibleState: vscode.TreeItemCollapsibleState.None,
                 command: {
-                    command: "leetcode.signin",
+                    command: "leetcodeStudyPlan.signin",
                     title: "Sign in to LeetCode",
                 },
             };

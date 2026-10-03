@@ -13,15 +13,23 @@
     "views": {
       "explorer": [
         {
-          "id": "leetCodeDailyPlan",
+          "id": "leetCodeStudyPlanDailyPlan",
           "name": "Daily plan test"
+        },
+        {
+          "id": "leetCodeStudyPlanExplorer",
+          "name": "Standalone problems test"
+        },
+        {
+          "id": "leetCodeExplorer",
+          "name": "Upstream problems fixture"
         }
       ]
     },
     "configuration": {
       "title": "Daily plan test",
       "properties": {
-        "leetcode.dailyPlan.path": {
+        "leetcodeStudyPlan.dailyPlan.path": {
           "type": "string",
           "default": "data/custom-plan.json",
           "scope": "resource"

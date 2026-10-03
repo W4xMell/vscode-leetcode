@@ -1,186 +1,119 @@
-# LeetCode with Custom Study Plans
+# LeetCode Study Plan
 
-> Solve LeetCode problems in VS Code
+[![CI](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml/badge.svg)](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml)
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/resources/LeetCode.png" alt="">
-</p>
-<p align="center">
-  <a href="https://github.com/LeetCode-OpenSource/vscode-leetcode/actions?query=workflow%3ACI+branch%3Amaster">
-    <img src="https://img.shields.io/github/workflow/status/LeetCode-OpenSource/vscode-leetcode/CI/master?style=flat-square" alt="">
-  </a>
-  <a href="https://gitter.im/vscode-leetcode/Lobby">
-    <img src="https://img.shields.io/gitter/room/LeetCode-OpenSource/vscode-leetcode.svg?style=flat-square" alt="">
-  </a>
-  <a href="https://marketplace.visualstudio.com/items?itemName=LeetCode.vscode-leetcode">
-    <img src="https://img.shields.io/visual-studio-marketplace/d/LeetCode.vscode-leetcode.svg?style=flat-square" alt="">
-  </a>
-  <a href="https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/LICENSE">
-    <img src="https://img.shields.io/github/license/LeetCode-OpenSource/vscode-leetcode.svg?style=flat-square" alt="">
-  </a>
-</p>
+A standalone VS Code extension for solving LeetCode problems from custom study plans. Organize problems in a workspace JSON file, open a problem from the sidebar, and use the familiar **Code Now**, **Test**, and **Submit** workflow.
 
-- English Document | [中文文档](https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/docs/README_zh-CN.md)
+[Chinese documentation](README.zh-CN.md) · [Plan format and development guide](docs/study-plan.md) · [Example workspace](examples/custom-plan)
 
-## Custom study plans
+This project is a fork of [LeetCode-OpenSource/vscode-leetcode](https://github.com/LeetCode-OpenSource/vscode-leetcode). It preserves the upstream problem-solving workflow and MIT license while using its own extension identity and state.
 
-This fork adds a **自定义题单 / Custom Study Plans** view to the existing LeetCode sidebar. Define ordered study groups in a workspace JSON file, select a problem, and use the original **Code Now**, **Test**, and **Submit** workflow. Repeated problems share a solution file and keep separate practice checkboxes in `PLAN.md`.
+## Features
 
-1. Copy the contents of [examples/custom-plan](examples/custom-plan) into your practice workspace.
-2. Open the LeetCode sidebar and expand **自定义题单**. The default plan is `data/custom-plan.json`.
-3. Select a problem to open the native preview, then click **Code Now**. Local exercises open their workspace templates.
-4. Right-click a problem to toggle its completion state or open an optional source link.
+- Ordered study groups in a dedicated **LeetCode Study Plan** sidebar.
+- Workspace JSON selection and automatic refresh when the plan changes.
+- Native problem previews, language templates, Code Now, testing, and submission.
+- Per-practice completion checkboxes in `PLAN.md`, including separate review entries for repeated problems.
+- Optional source links and local exercises that open workspace templates.
+- Offline plan browsing and compatibility with imported `data/notion-plan.json` snapshots.
 
-Use **自定义题单: 选择题单 JSON** to select another JSON file inside the workspace, or set `leetcode.dailyPlan.path`. Existing `data/notion-plan.json` workspaces remain supported when the default plan is absent. Plans are local files; Notion integration consists of imported data and optional source links, without automatic synchronization.
+## Installation
 
-See [中文使用与构建说明](docs/daily-plan.zh-CN.md) for the schema, VSIX installation, and tests. This fork is distributed as a locally built VSIX; the Marketplace links below refer to the upstream extension. It retains the upstream extension identifier, so installing its VSIX replaces that installed version.
+The extension is distributed as a VSIX and has not been published to the VS Code Marketplace. Download a VSIX artifact from a successful [GitHub Actions run](https://github.com/W4xMell/vscode-leetcode-study-plan/actions), or build it locally:
 
 ```sh
+git clone https://github.com/W4xMell/vscode-leetcode-study-plan.git
+cd vscode-leetcode-study-plan
 npm ci
 npm test
 npm run lint
 npm run build
+code --install-extension vscode-leetcode-study-plan-0.1.0.vsix
 ```
 
-Build and test tooling uses Node.js 22. A standalone checkout includes all test fixtures.
+Use Node.js 22 for development and packaging. The extension requires VS Code 1.57 or later and an accessible Node.js executable at runtime. After installation, run **Developer: Reload Window**.
 
-## ❗️ Attention ❗️- Workaround to login to LeetCode endpoint
+## Quick start
 
-> Note: If you are using `leetcode.cn`, you can just ignore this section.
+1. Copy the contents of [`examples/custom-plan/`](examples/custom-plan) into your practice workspace.
+2. Open the **LeetCode Study Plan** activity bar entry, then expand **Study Plans**.
+3. Run **LeetCode Study Plan: Switch Endpoint** and **LeetCode Study Plan: Switch Default Language** to select your site and language. Run **LeetCode Study Plan: Sign In** before account-dependent operations.
+4. Click a problem to open its preview, then select **Code Now**. The code icon on a plan row also opens the solution directly.
+5. Implement the solution between the generated `@lc code=start` and `@lc code=end` markers. Use **Study Plan: Test** and **Study Plan: Submit** above the code.
+6. Right-click the plan entry and choose **Toggle Practice Completion** to update `PLAN.md`.
 
-Recently we observed that [the extension cannot login to leetcode.com endpoint anymore](https://github.com/LeetCode-OpenSource/vscode-leetcode/issues/478). The root cause of this issue is that leetcode.com changed its login mechanism and so far there is no ideal way to fix that issue.
+Use the folder button in the Study Plans view, or **LeetCode Study Plan: Select Study Plan JSON**, to choose another JSON file inside the workspace. Plans use `data/custom-plan.json` by default. If that file is absent, the extension falls back to `data/notion-plan.json`.
 
-Thanks for [@yihong0618](https://github.com/yihong0618) provided a workaround which can somehow mitigate this. Now you can simply click the `Sign In` button and then select `Third Party` login or `Cookie` login.
+## Define a plan
 
-> Note: If you want to use third-party login(**Recommended**), please make sure your account has been connected to the third-party. If you want to use `Cookie` login, click [here](https://github.com/LeetCode-OpenSource/vscode-leetcode/issues/478#issuecomment-564757098) to see the steps.
+```json
+{
+  "days": [
+    {
+      "day": 1,
+      "title": "Day 1 - Arrays",
+      "problems": [
+        {
+          "order": 1,
+          "title": "Two Sum",
+          "kind": "leetcode",
+          "leetcodeId": 1,
+          "difficulty": "Easy"
+        }
+      ]
+    }
+  ]
+}
+```
 
-## Requirements
+Create the corresponding progress entries in the workspace root:
 
-- [VS Code 1.30.1+](https://code.visualstudio.com/)
-- [Node.js 10+](https://nodejs.org)
-  > NOTE: Please make sure that `Node` is in your `PATH` environment variable. You can also use the setting `leetcode.nodePath` to specify the location of your `Node.js` executable.
+```markdown
+## Day 1 - Arrays
 
-## Quick Start
+- [ ] 1. Two Sum
+```
 
-![demo](https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/gifs/demo.gif)
+Group and problem numbers identify practice entries. Titles can describe days, topics, or review stages. Repeated LeetCode IDs share a solution file but keep separate completion records. See the [plan format guide](docs/study-plan.md) for local exercises and optional fields.
 
-## Features
+## Independent extension
 
-### Sign In/Out
+| Component | Identifier or location |
+| --- | --- |
+| Extension ID | `W4xMell.vscode-leetcode-study-plan` |
+| Commands and settings | `leetcodeStudyPlan.*` |
+| Activity bar container | `leetcode-study-plan` |
+| Problem and plan views | `leetCodeStudyPlanExplorer`, `leetCodeStudyPlanDailyPlan` |
+| CLI account, configuration, and cache | `~/.leetcode-study-plan/` |
+| Default solution directory | `~/.leetcode-study-plan-solutions/` |
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/sign_in.png" alt="Sign in" />
-</p>
+The upstream extension can remain installed. This VSIX does not replace `LeetCode.vscode-leetcode`, reuse its settings, or read and delete its CLI cache. Sign in separately in this extension. Browser authorization uses this extension's callback ID; cookie login is also available.
 
-- Simply click `Sign in to LeetCode` in the `LeetCode Explorer` will let you **sign in** with your LeetCode account.
+Both extensions understand standard `@lc` solution files and may offer their own editor actions. This extension prefixes its Test and Submit CodeLens labels with **Study Plan** so the destination is clear.
 
-- You can also use the following command to sign in/out:
-  - **LeetCode: Sign in**
-  - **LeetCode: Sign out**
+Configure this extension through its own user settings. For example:
 
----
+```json
+{
+  "leetcodeStudyPlan.endpoint": "leetcode-cn",
+  "leetcodeStudyPlan.defaultLanguage": "typescript",
+  "leetcodeStudyPlan.workspaceFolder": "/absolute/path/to/practice",
+  "leetcodeStudyPlan.filePath": {
+    "default": { "folder": "solutions", "filename": "${id}.${ext}" }
+  }
+}
+```
 
-### Switch Endpoint
+Use `leetcodeStudyPlan.nodePath` if VS Code cannot find Node.js. The plan path setting, `leetcodeStudyPlan.dailyPlan.path`, is workspace scoped; most upstream-derived runtime settings remain user scoped.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/endpoint.png" alt="Switch Endpoint" />
-</p>
+## Verification and limitations
 
-- By clicking the button ![btn_endpoint](https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/btn_endpoint.png) at the **explorer's navigation bar**, you can switch between different endpoints.
+`npm test` covers plan validation, progress parsing, extension identity, and CLI cache isolation. `npm run test:host` uses an isolated VS Code profile and tests previews, Code Now, CodeLens, progress updates, plan switching, and legacy snapshot compatibility. It requires the `code` CLI and a graphical environment; `VSCODE_EXECUTABLE` can specify the executable path.
 
-- The supported endpoints are:
+GitHub Actions runs compilation, tests, linting, and VSIX packaging on Linux and Windows, then uploads build artifacts. Plans can be browsed offline; problem retrieval, testing, and submission require network access and the appropriate account permissions. Premium problems depend on your account subscription.
 
-  - **leetcode.com**
-  - **leetcode.cn**
+Plans are local files. The extension does not synchronize with Notion or write progress back to source pages. Completion is recorded manually rather than inferred from account history.
 
-  > Note: The accounts of different endpoints are **not** shared. Please make sure you are using the right endpoint. The extension will use `leetcode.com` by default.
+## Attribution
 
----
-
-### Pick a Problem
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/pick_problem.png" alt="Pick a Problem" />
-</p>
-
-- Directly click on the problem or right click the problem in the `LeetCode Explorer` and select `Preview Problem` to see the problem description.
-- Select `Show Problem` to directly open the file with the problem description.
-
-  > Note：You can specify the path of the workspace folder to store the problem files by updating the setting `leetcode.workspaceFolder`. The default value is：**$HOME/.leetcode/**.
-
-  > You can specify whether including the problem description in comments or not by updating the setting `leetcode.showCommentDescription`.
-
-  > You can switch the default language by triggering the command: `LeetCode: Switch Default Language`.
-
----
-
-### Editor Shortcuts
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/shortcuts.png" alt="Editor Shortcuts" />
-</p>
-
-- The extension supports 5 editor shortcuts (aka Code Lens):
-
-  - `Submit`: Submit your answer to LeetCode.
-  - `Test`: Test your answer with customized test cases.
-  - `Star/Unstar`: Star or unstar the current problem.
-  - `Solution`: Show the top voted solution for the current problem.
-  - `Description`: Show the problem description page.
-
-  > Note: You can customize the shortcuts using the setting: `leetcode.editor.shortcuts`. By default, only `Submit` and `Test` shortcuts are enabled.
-
----
-
-### Search problems by Keywords
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/search.png" alt="Search problems by Keywords" />
-</p>
-
-- By clicking the button ![btn_search](https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/btn_search.png) at the **explorer's navigation bar**, you can search the problems by keywords.
-
----
-
-### Manage Session
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/LeetCode-OpenSource/vscode-leetcode/master/docs/imgs/session.png" alt="Manage Session" />
-</p>
-
-- To manage your LeetCode sessions, just clicking the `LeetCode: ***` at the bottom of the status bar. You can **switch** between sessions or **create**, **delete** a session.
-
-## Settings
-
-| Setting Name                      | Description                                                                                                                                                                                                                                                   | Default Value      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| `leetcode.hideSolved`             | Specify to hide the solved problems or not                                                                                                                                                                                                                    | `false`            |
-| `leetcode.defaultLanguage`        | Specify the default language used to solve the problem. Supported languages are: `bash`, `c`, `cpp`, `csharp`, `golang`, `java`, `javascript`, `kotlin`, `mysql`, `php`, `python`,`python3`,`ruby`,`rust`, `scala`, `swift`, `typescript`                     | `N/A`              |
-| `leetcode.useWsl`                 | Specify whether to use WSL or not                                                                                                                                                                                                                             | `false`            |
-| `leetcode.endpoint`               | Specify the active endpoint. Supported endpoints are: `leetcode`, `leetcode-cn`                                                                                                                                                                               | `leetcode`         |
-| `leetcode.workspaceFolder`        | Specify the path of the workspace folder to store the problem files.                                                                                                                                                                                          | `""`               |
-| `leetcode.filePath`               | Specify the relative path under the workspace and the file name to save the problem files. More details can be found [here](https://github.com/LeetCode-OpenSource/vscode-leetcode/wiki/Customize-the-Relative-Folder-and-the-File-Name-of-the-Problem-File). |                    |
-| `leetcode.enableStatusBar`        | Specify whether the LeetCode status bar will be shown or not.                                                                                                                                                                                                 | `true`             |
-| `leetcode.editor.shortcuts`       | Specify the customized shortcuts in editors. Supported values are: `submit`, `test`, `star`, `solution` and `description`.                                                                                                                                    | `["submit, test"]` |
-| `leetcode.enableSideMode`         | Specify whether `preview`, `solution` and `submission` tab should be grouped into the second editor column when solving a problem.                                                                                                                            | `true`             |
-| `leetcode.nodePath`               | Specify the `Node.js` executable path. for example, C:\Program Files\nodejs\node.exe                                                                                                                                                                          | `node`             |
-| `leetcode.showCommentDescription` | Specify whether to include the problem description in the comments                                                                                                                                                                                            | `false`            |
-| `leetcode.useEndpointTranslation` | Use endpoint's translation (if available)                                                                                                                                                                                                                     | `true`             |
-| `leetcode.colorizeProblems`       | Add difficulty badge and colorize problems files in explorer tree                                                                                                                                                                                             | `true`             |
-| `leetcode.problems.sortStrategy`  | Specify sorting strategy for problems list                                                                                                                                                                                                                    | `None`             |
-| `leetcode.allowReportData`        | Allow LeetCode to report anonymous usage data to improve the product. list                                                                                                                                                                                    | `true`             |
-
-## Want Help?
-
-When you meet any problem, you can check out the [Troubleshooting](https://github.com/LeetCode-OpenSource/vscode-leetcode/wiki/Troubleshooting) and [FAQ](https://github.com/LeetCode-OpenSource/vscode-leetcode/wiki/FAQ) first.
-
-If your problem still cannot be addressed, feel free to reach us in the [Gitter Channel](https://gitter.im/vscode-leetcode/Lobby) or [file an issue](https://github.com/LeetCode-OpenSource/vscode-leetcode/issues/new/choose).
-
-## Release Notes
-
-Refer to [CHANGELOG](https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/CHANGELOG.md)
-
-## Acknowledgement
-
-- This extension is based on [@skygragon](https://github.com/skygragon)'s [leetcode-cli](https://github.com/skygragon/leetcode-cli) open source project.
-- Special thanks to our [contributors](https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/ACKNOWLEDGEMENTS.md).
+Based on [vscode-leetcode](https://github.com/LeetCode-OpenSource/vscode-leetcode) and its bundled `vsc-leetcode-cli` dependency. Original copyright notices and the [MIT license](LICENSE) are retained. See [thirdpartynotice.txt](thirdpartynotice.txt) for dependency notices.

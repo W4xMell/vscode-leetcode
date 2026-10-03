@@ -91,8 +91,8 @@ async function determineLeetCodeFolder(): Promise<string> {
     picks.push(
         {
             label: `Default location`,
-            detail: `${path.join(os.homedir(), ".leetcode")}`,
-            value: `${path.join(os.homedir(), ".leetcode")}`,
+            detail: `${path.join(os.homedir(), ".leetcode-study-plan-solutions")}`,
+            value: `${path.join(os.homedir(), ".leetcode-study-plan-solutions")}`,
         },
         {
             label: "$(file-directory) Browse...",

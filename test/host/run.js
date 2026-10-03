@@ -8,6 +8,8 @@ const { CustomCodeLensProvider } = require('../../out/src/codelens/CustomCodeLen
 async function run() {
   const api=await vscode.extensions.getExtension('local-test.daily-plan-test-host').activate();
   await api.ready;
+  const commands=await vscode.commands.getCommands(true);
+  for(const id of ['leetcode.showProblem','leetcodeStudyPlan.showProblem','leetcodeStudyPlan.testSolution','leetcodeStudyPlan.submitSolution']) assert.ok(commands.includes(id),id);
   const days=api.provider.getChildren();
   assert.equal(days.length,2);
   assert.equal(days.reduce((sum,day)=>sum+api.provider.getChildren(day).length,0),4);
@@ -15,7 +17,7 @@ async function run() {
   const root=vscode.workspace.workspaceFolders[0].uri.fsPath;
   const before=await fs.readFile(path.join(root,'PLAN.md'),'utf8');
 
-  await vscode.commands.executeCommand('leetcode.dailyPlan.preview',first);
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.preview',first);
   assert(leetCodePreviewProvider.panel,'原插件的预览面板未创建');
   assert(leetCodePreviewProvider.panel.webview.html.includes('Code Now'));
   assert.equal(leetCodePreviewProvider.node.id,'1');
@@ -25,20 +27,22 @@ async function run() {
   assert.equal(native.filename,path.join(root,'solutions','1.ts'));
   assert.equal(vscode.window.activeTextEditor.document.uri.fsPath,native.filename);
   const lenses=new CustomCodeLensProvider().provideCodeLenses(vscode.window.activeTextEditor.document);
-  assert.deepEqual(lenses.map(lens=>lens.command.title),['Submit','Test']);
+  assert.deepEqual(lenses.map(lens=>lens.command.title),['Study Plan: Submit','Study Plan: Test']);
+  assert.deepEqual(lenses.map(lens=>lens.command.command),['leetcodeStudyPlan.submitSolution','leetcodeStudyPlan.testSolution']);
+  assert.deepEqual(api.upstreamCalls,[],'Code Now must not call upstream commands');
   console.log('PASS 原题预览 → Code Now → TypeScript 模板 → Test/Submit CodeLens');
 
-  await vscode.commands.executeCommand('leetcode.dailyPlan.toggleDone',first);
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.toggleDone',first);
   assert.equal(api.provider.isDone(first),true);
   assert.equal(api.provider.getTreeItem(api.provider.getChildren()[0]).description,'1/3');
-  await vscode.commands.executeCommand('leetcode.dailyPlan.toggleDone',first);
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.toggleDone',first);
   assert.equal(api.provider.isDone(first),false);
   assert.equal(await fs.readFile(path.join(root,'PLAN.md'),'utf8'),before);
   console.log('PASS 完成状态保存、每日进度和恢复');
 
   const variant=api.provider.getChildren(api.provider.getChildren()[0])[2];
   const count=api.calls.filter(call=>call.kind==='template').length;
-  await vscode.commands.executeCommand('leetcode.dailyPlan.codeNow',variant);
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.codeNow',variant);
   assert.equal(vscode.window.activeTextEditor.document.uri.fsPath,path.join(root,variant.problem.solutionPath));
   assert.equal(api.calls.filter(call=>call.kind==='template').length,count);
   console.log('PASS 本地变式打开模板，不进入力扣生成/提交流程');
@@ -55,7 +59,7 @@ async function run() {
   // 验证工作区配置可以切换题单，以及旧 Notion 路径兼容。
   const alternate=path.join(root,'alternate.json');
   await fs.writeFile(alternate,JSON.stringify({days:[{day:3,title:'专题练习',problems:[{order:1,title:'Two Sum',kind:'leetcode',leetcodeId:1,difficulty:'简单'}]}]}));
-  const config=vscode.workspace.getConfiguration('leetcode',vscode.workspace.workspaceFolders[0].uri);
+  const config=vscode.workspace.getConfiguration('leetcodeStudyPlan',vscode.workspace.workspaceFolders[0].uri);
   await config.update('dailyPlan.path','alternate.json',vscode.ConfigurationTarget.WorkspaceFolder);
   await api.refresh();
   assert.equal(api.provider.getChildren().length,1);
@@ -68,7 +72,7 @@ async function run() {
   await api.refresh();
   console.log('PASS 配置切换题单与旧 Notion 快照兼容');
 
-  const summary={days:2,problems:4,nativeCodeNow:true,codeLens:['Submit','Test'],completionRoundTrip:true,customLocal:true,invalidPlanRecovery:true,configuredPlan:true,legacyNotionFallback:true};
+  const summary={days:2,problems:4,nativeCodeNow:true,codeLens:['Study Plan: Submit','Study Plan: Test'],completionRoundTrip:true,customLocal:true,invalidPlanRecovery:true,configuredPlan:true,legacyNotionFallback:true,standaloneActivation:true,upstreamCommandIsolation:true};
   await fs.writeFile(path.join(root,'test-result.json'),JSON.stringify(summary,null,2));
 }
 module.exports={run};

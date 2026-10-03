@@ -50,7 +50,7 @@ export class LeetCodeNode {
     public get previewCommand(): Command {
         return {
             title: "Preview Problem",
-            command: "leetcode.previewProblem",
+            command: "leetcodeStudyPlan.previewProblem",
             arguments: [this],
         };
     }
@@ -61,7 +61,7 @@ export class LeetCodeNode {
 
     public get uri(): Uri {
         return Uri.from({
-            scheme: "leetcode",
+            scheme: "leetcode-study-plan",
             authority: this.isProblem ? "problems" : "tree-node",
             path: `/${this.id}`, // path must begin with slash /
             query: `difficulty=${this.difficulty}`,

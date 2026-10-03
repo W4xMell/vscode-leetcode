@@ -49,16 +49,16 @@ export class CustomCodeLensProvider implements vscode.CodeLensProvider {
 
         if (shortcuts.indexOf("submit") >= 0) {
             codeLens.push(new vscode.CodeLens(range, {
-                title: "Submit",
-                command: "leetcode.submitSolution",
+                title: "Study Plan: Submit",
+                command: "leetcodeStudyPlan.submitSolution",
                 arguments: [document.uri],
             }));
         }
 
         if (shortcuts.indexOf("test") >= 0) {
             codeLens.push(new vscode.CodeLens(range, {
-                title: "Test",
-                command: "leetcode.testSolution",
+                title: "Study Plan: Test",
+                command: "leetcodeStudyPlan.testSolution",
                 arguments: [document.uri],
             }));
         }
@@ -66,7 +66,7 @@ export class CustomCodeLensProvider implements vscode.CodeLensProvider {
         if (shortcuts.indexOf("star") >= 0 && node) {
             codeLens.push(new vscode.CodeLens(range, {
                 title: node.isFavorite ? "Unstar" : "Star",
-                command: node.isFavorite ? "leetcode.removeFavorite" : "leetcode.addFavorite",
+                command: node.isFavorite ? "leetcodeStudyPlan.removeFavorite" : "leetcodeStudyPlan.addFavorite",
                 arguments: [node],
             }));
         }
@@ -74,7 +74,7 @@ export class CustomCodeLensProvider implements vscode.CodeLensProvider {
         if (shortcuts.indexOf("solution") >= 0) {
             codeLens.push(new vscode.CodeLens(range, {
                 title: "Solution",
-                command: "leetcode.showSolution",
+                command: "leetcodeStudyPlan.showSolution",
                 arguments: [document.uri],
             }));
         }
@@ -82,7 +82,7 @@ export class CustomCodeLensProvider implements vscode.CodeLensProvider {
         if (shortcuts.indexOf("description") >= 0) {
             codeLens.push(new vscode.CodeLens(range, {
                 title: "Description",
-                command: "leetcode.previewProblem",
+                command: "leetcodeStudyPlan.previewProblem",
                 arguments: [document.uri],
             }));
         }

@@ -1,11 +1,11 @@
-# 自定义练习记录
+# Practice Progress
 
-## Day 1 · 数组与哈希
+## Day 1 - Arrays and Hashing
 
-- [ ] 1. 两数之和
-- [ ] 2. 有效的括号
-- [ ] 3. 数组去重（本地练习）
+- [ ] 1. Two Sum
+- [ ] 2. Valid Parentheses
+- [ ] 3. Remove Duplicates (Local Exercise)
 
-## Day 2 · 复习
+## Day 2 - Review
 
-- [ ] 1. 两数之和
+- [ ] 1. Two Sum

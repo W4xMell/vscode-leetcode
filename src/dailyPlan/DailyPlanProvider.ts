@@ -29,7 +29,7 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
         folders.sort((a, b) => Number(b.uri.fsPath === this.preferredRoot) - Number(a.uri.fsPath === this.preferredRoot));
         for (const folder of folders) {
             if (folder.uri.scheme !== "file") continue;
-            const relative = vscode.workspace.getConfiguration("leetcode", folder.uri).get<string>("dailyPlan.path", "data/custom-plan.json");
+            const relative = vscode.workspace.getConfiguration("leetcodeStudyPlan", folder.uri).get<string>("dailyPlan.path", "data/custom-plan.json");
             let filename = workspacePath(folder.uri.fsPath, relative);
             if (relative === "data/custom-plan.json" && !await fs.pathExists(filename)) {
                 filename = workspacePath(folder.uri.fsPath, "data/notion-plan.json");
@@ -62,19 +62,19 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
             dayItem.description = `${completedCount}/${element.problems.length}`;
             dayItem.contextValue = "dailyPlanDay";
             dayItem.iconPath = new vscode.ThemeIcon("calendar");
-            dayItem.tooltip = `${element.day.title}\n右键查看题单来源。`;
+            dayItem.tooltip = `${element.day.title}\nRight-click to open the source link.`;
             return dayItem;
         }
         const p = element.problem;
         const done = this.isDone(element);
-        const item = new vscode.TreeItem(p.kind === "leetcode" ? `[${p.leetcodeId}] ${p.title.replace(/^\d+[｜.]\s*/, "")}` : `本地变式 · ${p.title}`);
+        const item = new vscode.TreeItem(p.kind === "leetcode" ? `[${p.leetcodeId}] ${p.title.replace(/^\d+[｜.]\s*/, "")}` : `Local exercise: ${p.title}`);
         item.id = `daily-day-${element.day.day}-problem-${p.order}`;
         item.contextValue = done ? "dailyPlanProblemDone" : "dailyPlanProblem";
-        item.description = p.kind === "custom" ? "本地练习" : `${p.difficulty}${p.paidOnly ? " · 会员" : ""}${p.previousDays?.length ? " · 复习" : ""}`;
+        item.description = p.kind === "custom" ? "Local exercise" : `${p.difficulty}${p.paidOnly ? " · Premium" : ""}${p.previousDays?.length ? " · Review" : ""}`;
         item.iconPath = new vscode.ThemeIcon(done ? "pass-filled" : p.kind === "custom" ? "beaker" : p.paidOnly ? "lock" : "circle-outline");
-        item.command = { command: "leetcode.dailyPlan.preview", title: "Preview Problem", arguments: [element] };
-        item.tooltip = `${p.title}\n${done ? "本次练习已完成" : "本次练习待完成"}\n` +
-            (p.kind === "leetcode" ? "点击预览题目，使用 Code Now 开始编写。" : "点击打开本地变式模板。") + (p.note ? `\n${p.note}` : "");
+        item.command = { command: "leetcodeStudyPlan.dailyPlan.preview", title: "Preview Problem", arguments: [element] };
+        item.tooltip = `${p.title}\n${done ? "Practice completed" : "Practice pending"}\n` +
+            (p.kind === "leetcode" ? "Click to preview; use Code Now to start solving." : "Click to open the local exercise template.") + (p.note ? `\n${p.note}` : "");
         return item;
     }
 
@@ -90,20 +90,20 @@ export function resolveProblem(problem: IPlanProblem): LeetCodeNode {
 export function initializeDailyPlan(context: vscode.ExtensionContext): { provider: DailyPlanProvider; ready: Promise<void>; refresh: () => Promise<void> } {
     const provider = new DailyPlanProvider();
     provider.preferredRoot = context.workspaceState.get<string>("dailyPlan.root");
-    const view = vscode.window.createTreeView("leetCodeDailyPlan", { treeDataProvider: provider, showCollapseAll: true });
+    const view = vscode.window.createTreeView("leetCodeStudyPlanDailyPlan", { treeDataProvider: provider, showCollapseAll: true });
     let pendingRefresh = Promise.resolve();
     const refresh = (): Promise<void> => {
         pendingRefresh = pendingRefresh.catch(() => undefined).then(() => provider.refresh()).then(() => {
             view.message = undefined;
         }, (error) => {
-            view.message = `题单读取失败：${error.message}`;
+            view.message = `Failed to load study plan: ${error.message}`;
             throw error;
         });
         return pendingRefresh;
     };
     const backgroundRefresh = (): void => { refresh().catch(() => undefined); };
     const guarded = (handler: (element?: PlanElement) => Promise<any>) => async (element?: PlanElement): Promise<void> => {
-        try { await handler(element); } catch (error) { await vscode.window.showErrorMessage(`自定义题单：${error.message}`); }
+        try { await handler(element); } catch (error) { await vscode.window.showErrorMessage(`Study Plan: ${error.message}`); }
     };
     const openProblem = async (element: PlanElement | undefined, codeNow: boolean): Promise<void> => {
         if (!element || element.type !== "problem" || !provider.root) return;
@@ -120,33 +120,33 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
         if (!element || element.type !== "problem" || !provider.root) return;
         const document = await vscode.workspace.openTextDocument(vscode.Uri.file(path.join(provider.root, "PLAN.md")));
         const entry = parseProgress(document.getText()).get(practiceKey(element.day.day, element.problem.order));
-        if (!entry) throw new Error("PLAN.md 中找不到该条目，无法更新完成状态。");
+        if (!entry) throw new Error("No matching entry in PLAN.md; completion cannot be updated.");
         const edit = new vscode.WorkspaceEdit();
         edit.replace(document.uri, new vscode.Range(document.positionAt(entry.offset), document.positionAt(entry.offset + 1)), entry.done ? " " : "x");
-        if (!await vscode.workspace.applyEdit(edit) || !await document.save()) throw new Error("完成状态保存失败，请检查 PLAN.md。");
+        if (!await vscode.workspace.applyEdit(edit) || !await document.save()) throw new Error("Could not save completion. Check PLAN.md.");
         await refresh();
     };
     const openSource = async (element?: PlanElement): Promise<void> => {
         if (!element) return;
         const url = element.type === "day" ? element.day.sourceUrl : element.problem.sourceUrl || element.day.algorithmSourceUrl || element.day.sourceUrl;
-        if (!url) throw new Error("该条目没有配置来源链接。");
+        if (!url) throw new Error("This entry has no source link.");
         const uri = vscode.Uri.parse(url);
-        if (uri.scheme !== "https") throw new Error("题单来源链接必须使用 HTTPS。");
+        if (uri.scheme !== "https") throw new Error("Source links must use HTTPS.");
         await vscode.env.openExternal(uri);
     };
     const selectPlan = async (): Promise<void> => {
         const folders = vscode.workspace.workspaceFolders || [];
-        if (!folders.length) throw new Error("请先打开练习工作区，再选择题单。");
-        const files = await vscode.window.showOpenDialog({ canSelectMany: false, filters: { "题单 JSON": ["json"] }, defaultUri: folders[0].uri });
+        if (!folders.length) throw new Error("Open a practice workspace before selecting a plan.");
+        const files = await vscode.window.showOpenDialog({ canSelectMany: false, filters: { "Study Plan JSON": ["json"] }, defaultUri: folders[0].uri });
         if (!files?.length) return;
         const folder = vscode.workspace.getWorkspaceFolder(files[0]);
-        if (!folder || files[0].scheme !== "file") throw new Error("请选择工作区内的题单 JSON 文件。");
+        if (!folder || files[0].scheme !== "file") throw new Error("Select a study plan JSON file inside the workspace.");
         const relative = path.relative(folder.uri.fsPath, files[0].fsPath);
         workspacePath(folder.uri.fsPath, relative);
         validatePlan(await fs.readJson(files[0].fsPath));
         provider.preferredRoot = folder.uri.fsPath;
         await context.workspaceState.update("dailyPlan.root", folder.uri.fsPath);
-        await vscode.workspace.getConfiguration("leetcode", folder.uri).update("dailyPlan.path", relative, vscode.ConfigurationTarget.WorkspaceFolder);
+        await vscode.workspace.getConfiguration("leetcodeStudyPlan", folder.uri).update("dailyPlan.path", relative, vscode.ConfigurationTarget.WorkspaceFolder);
         await refresh();
     };
     let watchers: vscode.FileSystemWatcher[] = [];
@@ -154,7 +154,7 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
         for (const watcher of watchers) watcher.dispose();
         watchers = [vscode.workspace.createFileSystemWatcher("**/PLAN.md")];
         for (const folder of vscode.workspace.workspaceFolders || []) {
-            const relative = vscode.workspace.getConfiguration("leetcode", folder.uri).get<string>("dailyPlan.path", "data/custom-plan.json");
+            const relative = vscode.workspace.getConfiguration("leetcodeStudyPlan", folder.uri).get<string>("dailyPlan.path", "data/custom-plan.json");
             try {
                 workspacePath(folder.uri.fsPath, relative);
                 watchers.push(vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(folder, relative)));
@@ -168,16 +168,16 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
         }
     };
     context.subscriptions.push(provider, view,
-        vscode.commands.registerCommand("leetcode.dailyPlan.refresh", guarded(refresh)),
-        vscode.commands.registerCommand("leetcode.dailyPlan.preview", guarded((element) => openProblem(element, false))),
-        vscode.commands.registerCommand("leetcode.dailyPlan.codeNow", guarded((element) => openProblem(element, true))),
-        vscode.commands.registerCommand("leetcode.dailyPlan.toggleDone", guarded(toggleDone)),
-        vscode.commands.registerCommand("leetcode.dailyPlan.openSource", guarded(openSource)),
-        vscode.commands.registerCommand("leetcode.dailyPlan.openNotion", guarded(openSource)),
-        vscode.commands.registerCommand("leetcode.dailyPlan.selectPlan", guarded(selectPlan)),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.refresh", guarded(refresh)),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.preview", guarded((element) => openProblem(element, false))),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.codeNow", guarded((element) => openProblem(element, true))),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.toggleDone", guarded(toggleDone)),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.openSource", guarded(openSource)),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.openNotion", guarded(openSource)),
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.selectPlan", guarded(selectPlan)),
         vscode.workspace.onDidChangeWorkspaceFolders(() => { updateWatchers(); backgroundRefresh(); }),
         vscode.workspace.onDidChangeConfiguration((event) => {
-            if (event.affectsConfiguration("leetcode.dailyPlan.path")) { updateWatchers(); backgroundRefresh(); }
+            if (event.affectsConfiguration("leetcodeStudyPlan.dailyPlan.path")) { updateWatchers(); backgroundRefresh(); }
         }),
         vscode.workspace.onDidChangeTextDocument((event) => { if (provider.root && event.document.uri.fsPath === path.join(provider.root, "PLAN.md")) backgroundRefresh(); })
     );

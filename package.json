@@ -1,10 +1,10 @@
 {
-    "name": "vscode-leetcode",
-    "displayName": "LeetCode · 自定义题单",
+    "name": "vscode-leetcode-study-plan",
+    "displayName": "LeetCode Study Plan",
     "description": "Solve LeetCode problems in VS Code with workspace-defined custom study plans.",
-    "version": "0.18.6",
-    "author": "LeetCode",
-    "publisher": "LeetCode",
+    "version": "0.1.0",
+    "author": "W4xMell",
+    "publisher": "W4xMell",
     "license": "MIT",
     "icon": "resources/LeetCode.png",
     "engines": {
@@ -12,9 +12,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/W4xMell/vscode-leetcode"
+        "url": "https://github.com/W4xMell/vscode-leetcode-study-plan"
     },
-    "homepage": "https://github.com/W4xMell/vscode-leetcode",
+    "homepage": "https://github.com/W4xMell/vscode-leetcode-study-plan",
     "categories": [
         "Other",
         "Snippets"
@@ -22,377 +22,379 @@
     "keywords": [
         "leetcode",
         "algorithm",
-        "interview"
+        "interview",
+        "study-plan",
+        "custom-plan"
     ],
     "preview": true,
     "activationEvents": [
-        "onCommand:leetcode.toggleLeetCodeCn",
-        "onCommand:leetcode.signin",
-        "onCommand:leetcode.signout",
-        "onCommand:leetcode.manageSessions",
-        "onCommand:leetcode.refreshExplorer",
-        "onCommand:leetcode.pickOne",
-        "onCommand:leetcode.showProblem",
-        "onCommand:leetcode.previewProblem",
-        "onCommand:leetcode.searchProblem",
-        "onCommand:leetcode.testSolution",
-        "onCommand:leetcode.submitSolution",
-        "onCommand:leetcode.switchDefaultLanguage",
-        "onCommand:leetcode.problems.sort",
-        "onView:leetCodeExplorer",
+        "onCommand:leetcodeStudyPlan.toggleLeetCodeCn",
+        "onCommand:leetcodeStudyPlan.signin",
+        "onCommand:leetcodeStudyPlan.signout",
+        "onCommand:leetcodeStudyPlan.manageSessions",
+        "onCommand:leetcodeStudyPlan.refreshExplorer",
+        "onCommand:leetcodeStudyPlan.pickOne",
+        "onCommand:leetcodeStudyPlan.showProblem",
+        "onCommand:leetcodeStudyPlan.previewProblem",
+        "onCommand:leetcodeStudyPlan.searchProblem",
+        "onCommand:leetcodeStudyPlan.testSolution",
+        "onCommand:leetcodeStudyPlan.submitSolution",
+        "onCommand:leetcodeStudyPlan.switchDefaultLanguage",
+        "onCommand:leetcodeStudyPlan.problems.sort",
+        "onView:leetCodeStudyPlanExplorer",
         "workspaceContains:data/notion-plan.json",
-        "onView:leetCodeDailyPlan",
+        "onView:leetCodeStudyPlanDailyPlan",
         "workspaceContains:data/custom-plan.json"
     ],
     "main": "./out/src/extension",
     "contributes": {
         "commands": [
             {
-                "command": "leetcode.deleteCache",
+                "command": "leetcodeStudyPlan.deleteCache",
                 "title": "Delete Cache",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.toggleLeetCodeCn",
+                "command": "leetcodeStudyPlan.toggleLeetCodeCn",
                 "title": "Switch Endpoint",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": "$(globe)"
             },
             {
-                "command": "leetcode.signin",
+                "command": "leetcodeStudyPlan.signin",
                 "title": "Sign In",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": "$(sign-in)"
             },
             {
-                "command": "leetcode.signout",
+                "command": "leetcodeStudyPlan.signout",
                 "title": "Sign Out",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.manageSessions",
+                "command": "leetcodeStudyPlan.manageSessions",
                 "title": "Manage Sessions",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.refreshExplorer",
+                "command": "leetcodeStudyPlan.refreshExplorer",
                 "title": "Refresh",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": "$(refresh)"
             },
             {
-                "command": "leetcode.pickOne",
+                "command": "leetcodeStudyPlan.pickOne",
                 "title": "Pick One",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.showProblem",
+                "command": "leetcodeStudyPlan.showProblem",
                 "title": "Show Problem",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.previewProblem",
+                "command": "leetcodeStudyPlan.previewProblem",
                 "title": "Preview Problem",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.searchProblem",
+                "command": "leetcodeStudyPlan.searchProblem",
                 "title": "Search Problem",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": "$(search)"
             },
             {
-                "command": "leetcode.showSolution",
+                "command": "leetcodeStudyPlan.showSolution",
                 "title": "Show Top Voted Solution",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.testSolution",
+                "command": "leetcodeStudyPlan.testSolution",
                 "title": "Test in LeetCode",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.submitSolution",
+                "command": "leetcodeStudyPlan.submitSolution",
                 "title": "Submit to LeetCode",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.addFavorite",
+                "command": "leetcodeStudyPlan.addFavorite",
                 "title": "Add to Favorite List",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": {
                     "light": "resources/light/like.png",
                     "dark": "resources/dark/like.png"
                 }
             },
             {
-                "command": "leetcode.removeFavorite",
+                "command": "leetcodeStudyPlan.removeFavorite",
                 "title": "Remove from Favorite List",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": {
                     "light": "resources/light/dislike.png",
                     "dark": "resources/dark/dislike.png"
                 }
             },
             {
-                "command": "leetcode.switchDefaultLanguage",
+                "command": "leetcodeStudyPlan.switchDefaultLanguage",
                 "title": "Switch Default Language",
-                "category": "LeetCode"
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.problems.sort",
+                "command": "leetcodeStudyPlan.problems.sort",
                 "title": "Sort Problems",
-                "category": "LeetCode",
+                "category": "LeetCode Study Plan",
                 "icon": "$(sort-precedence)"
             },
             {
-                "command": "leetcode.dailyPlan.refresh",
-                "title": "刷新题单",
-                "category": "自定义题单",
+                "command": "leetcodeStudyPlan.dailyPlan.refresh",
+                "title": "Refresh Study Plan",
+                "category": "LeetCode Study Plan",
                 "icon": "$(refresh)"
             },
             {
-                "command": "leetcode.dailyPlan.preview",
-                "title": "预览题目",
-                "category": "自定义题单"
+                "command": "leetcodeStudyPlan.dailyPlan.preview",
+                "title": "Preview Problem",
+                "category": "LeetCode Study Plan"
             },
             {
-                "command": "leetcode.dailyPlan.codeNow",
+                "command": "leetcodeStudyPlan.dailyPlan.codeNow",
                 "title": "Code Now",
-                "category": "自定义题单",
+                "category": "LeetCode Study Plan",
                 "icon": "$(code)"
             },
             {
-                "command": "leetcode.dailyPlan.openSource",
-                "title": "查看题单来源",
-                "category": "自定义题单",
+                "command": "leetcodeStudyPlan.dailyPlan.openSource",
+                "title": "Open Source Link",
+                "category": "LeetCode Study Plan",
                 "icon": "$(link-external)"
             },
             {
-                "command": "leetcode.dailyPlan.toggleDone",
-                "title": "切换本次练习完成状态",
-                "category": "自定义题单",
+                "command": "leetcodeStudyPlan.dailyPlan.toggleDone",
+                "title": "Toggle Practice Completion",
+                "category": "LeetCode Study Plan",
                 "icon": "$(check)"
             },
             {
-                "command": "leetcode.dailyPlan.selectPlan",
-                "title": "选择题单 JSON",
-                "category": "自定义题单",
+                "command": "leetcodeStudyPlan.dailyPlan.selectPlan",
+                "title": "Select Study Plan JSON",
+                "category": "LeetCode Study Plan",
                 "icon": "$(folder-opened)"
             }
         ],
         "viewsContainers": {
             "activitybar": [
                 {
-                    "id": "leetcode",
-                    "title": "LeetCode",
+                    "id": "leetcode-study-plan",
+                    "title": "LeetCode Study Plan",
                     "icon": "resources/LeetCode.svg"
                 }
             ]
         },
         "views": {
-            "leetcode": [
+            "leetcode-study-plan": [
                 {
-                    "id": "leetCodeExplorer",
+                    "id": "leetCodeStudyPlanExplorer",
                     "name": "Problems"
                 },
                 {
-                    "id": "leetCodeDailyPlan",
-                    "name": "自定义题单"
+                    "id": "leetCodeStudyPlanDailyPlan",
+                    "name": "Study Plans"
                 }
             ]
         },
         "menus": {
             "view/title": [
                 {
-                    "command": "leetcode.toggleLeetCodeCn",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.toggleLeetCodeCn",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "navigation@0"
                 },
                 {
-                    "command": "leetcode.signin",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.signin",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "navigation@1"
                 },
                 {
-                    "command": "leetcode.searchProblem",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.searchProblem",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "navigation@2"
                 },
                 {
-                    "command": "leetcode.refreshExplorer",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.refreshExplorer",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "navigation@3"
                 },
                 {
-                    "command": "leetcode.signout",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.signout",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "overflow@1"
                 },
                 {
-                    "command": "leetcode.pickOne",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.pickOne",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "overflow@2"
                 },
                 {
-                    "command": "leetcode.problems.sort",
-                    "when": "view == leetCodeExplorer",
+                    "command": "leetcodeStudyPlan.problems.sort",
+                    "when": "view == leetCodeStudyPlanExplorer",
                     "group": "overflow@3"
                 },
                 {
-                    "command": "leetcode.dailyPlan.refresh",
-                    "when": "view == leetCodeDailyPlan",
+                    "command": "leetcodeStudyPlan.dailyPlan.refresh",
+                    "when": "view == leetCodeStudyPlanDailyPlan",
                     "group": "navigation"
                 },
                 {
-                    "command": "leetcode.dailyPlan.selectPlan",
-                    "when": "view == leetCodeDailyPlan",
+                    "command": "leetcodeStudyPlan.dailyPlan.selectPlan",
+                    "when": "view == leetCodeStudyPlanDailyPlan",
                     "group": "navigation@1"
                 }
             ],
             "view/item/context": [
                 {
-                    "command": "leetcode.previewProblem",
-                    "when": "view == leetCodeExplorer && viewItem =~ /problem*/",
+                    "command": "leetcodeStudyPlan.previewProblem",
+                    "when": "view == leetCodeStudyPlanExplorer && viewItem =~ /problem*/",
                     "group": "leetcode@1"
                 },
                 {
-                    "command": "leetcode.showProblem",
-                    "when": "view == leetCodeExplorer && viewItem =~ /problem*/",
+                    "command": "leetcodeStudyPlan.showProblem",
+                    "when": "view == leetCodeStudyPlanExplorer && viewItem =~ /problem*/",
                     "group": "leetcode@2"
                 },
                 {
-                    "command": "leetcode.showSolution",
-                    "when": "view == leetCodeExplorer && viewItem =~ /problem*/",
+                    "command": "leetcodeStudyPlan.showSolution",
+                    "when": "view == leetCodeStudyPlanExplorer && viewItem =~ /problem*/",
                     "group": "leetcode@3"
                 },
                 {
-                    "command": "leetcode.addFavorite",
-                    "when": "view == leetCodeExplorer && viewItem == problem",
+                    "command": "leetcodeStudyPlan.addFavorite",
+                    "when": "view == leetCodeStudyPlanExplorer && viewItem == problem",
                     "group": "inline"
                 },
                 {
-                    "command": "leetcode.removeFavorite",
-                    "when": "view == leetCodeExplorer && viewItem == problem-favorite",
+                    "command": "leetcodeStudyPlan.removeFavorite",
+                    "when": "view == leetCodeStudyPlanExplorer && viewItem == problem-favorite",
                     "group": "inline"
                 },
                 {
-                    "command": "leetcode.dailyPlan.codeNow",
-                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "command": "leetcodeStudyPlan.dailyPlan.codeNow",
+                    "when": "view == leetCodeStudyPlanDailyPlan && viewItem =~ /^dailyPlanProblem/",
                     "group": "inline@1"
                 },
                 {
-                    "command": "leetcode.dailyPlan.preview",
-                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "command": "leetcodeStudyPlan.dailyPlan.preview",
+                    "when": "view == leetCodeStudyPlanDailyPlan && viewItem =~ /^dailyPlanProblem/",
                     "group": "practice@1"
                 },
                 {
-                    "command": "leetcode.dailyPlan.codeNow",
-                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "command": "leetcodeStudyPlan.dailyPlan.codeNow",
+                    "when": "view == leetCodeStudyPlanDailyPlan && viewItem =~ /^dailyPlanProblem/",
                     "group": "practice@2"
                 },
                 {
-                    "command": "leetcode.dailyPlan.toggleDone",
-                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "command": "leetcodeStudyPlan.dailyPlan.toggleDone",
+                    "when": "view == leetCodeStudyPlanDailyPlan && viewItem =~ /^dailyPlanProblem/",
                     "group": "practice@3"
                 },
                 {
-                    "command": "leetcode.dailyPlan.openSource",
-                    "when": "view == leetCodeDailyPlan",
+                    "command": "leetcodeStudyPlan.dailyPlan.openSource",
+                    "when": "view == leetCodeStudyPlanDailyPlan",
                     "group": "source@1"
                 }
             ],
             "commandPalette": [
                 {
-                    "command": "leetcode.showProblem",
+                    "command": "leetcodeStudyPlan.showProblem",
                     "when": "never"
                 },
                 {
-                    "command": "leetcode.showSolution",
+                    "command": "leetcodeStudyPlan.showSolution",
                     "when": "never"
                 },
                 {
-                    "command": "leetcode.previewProblem",
+                    "command": "leetcodeStudyPlan.previewProblem",
                     "when": "never"
                 },
                 {
-                    "command": "leetcode.addFavorite",
+                    "command": "leetcodeStudyPlan.addFavorite",
                     "when": "never"
                 },
                 {
-                    "command": "leetcode.removeFavorite",
+                    "command": "leetcodeStudyPlan.removeFavorite",
                     "when": "never"
                 },
                 {
-                    "command": "leetcode.dailyPlan.preview",
+                    "command": "leetcodeStudyPlan.dailyPlan.preview",
                     "when": "false"
                 },
                 {
-                    "command": "leetcode.dailyPlan.codeNow",
+                    "command": "leetcodeStudyPlan.dailyPlan.codeNow",
                     "when": "false"
                 },
                 {
-                    "command": "leetcode.dailyPlan.toggleDone",
+                    "command": "leetcodeStudyPlan.dailyPlan.toggleDone",
                     "when": "false"
                 },
                 {
-                    "command": "leetcode.dailyPlan.openSource",
+                    "command": "leetcodeStudyPlan.dailyPlan.openSource",
                     "when": "false"
                 }
             ],
             "explorer/context": [
                 {
-                    "command": "leetcode.testSolution",
+                    "command": "leetcodeStudyPlan.testSolution",
                     "when": "explorerResourceIsFolder == false",
                     "group": "leetcode@1"
                 },
                 {
-                    "command": "leetcode.submitSolution",
+                    "command": "leetcodeStudyPlan.submitSolution",
                     "when": "explorerResourceIsFolder == false",
                     "group": "leetcode@2"
                 }
             ],
             "editor/context": [
                 {
-                    "submenu": "leetcode.editorAction"
+                    "submenu": "leetcodeStudyPlan.editorAction"
                 }
             ],
-            "leetcode.editorAction": [
+            "leetcodeStudyPlan.editorAction": [
                 {
-                    "command": "leetcode.testSolution",
+                    "command": "leetcodeStudyPlan.testSolution",
                     "group": "leetcode@1"
                 },
                 {
-                    "command": "leetcode.submitSolution",
+                    "command": "leetcodeStudyPlan.submitSolution",
                     "group": "leetcode@2"
                 },
                 {
-                    "command": "leetcode.showSolution",
+                    "command": "leetcodeStudyPlan.showSolution",
                     "group": "leetcode@3"
                 },
                 {
-                    "command": "leetcode.previewProblem",
+                    "command": "leetcodeStudyPlan.previewProblem",
                     "group": "leetcode@4"
                 }
             ]
         },
         "submenus": [
             {
-                "id": "leetcode.editorAction",
-                "label": "LeetCode"
+                "id": "leetcodeStudyPlan.editorAction",
+                "label": "LeetCode Study Plan"
             }
         ],
         "configuration": [
             {
-                "title": "LeetCode",
+                "title": "LeetCode Study Plan",
                 "properties": {
-                    "leetcode.hideSolved": {
+                    "leetcodeStudyPlan.hideSolved": {
                         "type": "boolean",
                         "default": false,
                         "scope": "application",
                         "description": "Hide solved problems."
                     },
-                    "leetcode.defaultLanguage": {
+                    "leetcodeStudyPlan.defaultLanguage": {
                         "type": "string",
                         "enum": [
                             "bash",
@@ -416,7 +418,7 @@
                         "scope": "application",
                         "description": "Default language for solving the problems."
                     },
-                    "leetcode.showDescription": {
+                    "leetcodeStudyPlan.showDescription": {
                         "type": "string",
                         "default": "In Webview",
                         "enum": [
@@ -432,44 +434,44 @@
                         "scope": "application",
                         "description": "Specify where to show the description."
                     },
-                    "leetcode.showCommentDescription": {
+                    "leetcodeStudyPlan.showCommentDescription": {
                         "type": "boolean",
                         "default": false,
                         "scope": "application",
                         "description": "[Deprecated] Include problem description in comments.",
-                        "deprecationMessage": "This setting will be deprecated in 0.17.0, please use 'leetcode.showDescription' instead"
+                        "deprecationMessage": "This setting will be deprecated in 0.17.0, please use 'leetcodeStudyPlan.showDescription' instead"
                     },
-                    "leetcode.hint.setDefaultLanguage": {
+                    "leetcodeStudyPlan.hint.setDefaultLanguage": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Show a hint to set the default language."
                     },
-                    "leetcode.hint.configWebviewMarkdown": {
+                    "leetcodeStudyPlan.hint.configWebviewMarkdown": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Show a hint to change webview appearance through markdown config."
                     },
-                    "leetcode.hint.commentDescription": {
+                    "leetcodeStudyPlan.hint.commentDescription": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Show a hint to enable comment description in solution code file."
                     },
-                    "leetcode.hint.commandShortcut": {
+                    "leetcodeStudyPlan.hint.commandShortcut": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Show a hint to configure commands key binding."
                     },
-                    "leetcode.useWsl": {
+                    "leetcodeStudyPlan.useWsl": {
                         "type": "boolean",
                         "default": false,
                         "scope": "application",
                         "description": "Use the Windows Subsystem for Linux."
                     },
-                    "leetcode.endpoint": {
+                    "leetcodeStudyPlan.endpoint": {
                         "type": "string",
                         "default": "leetcode",
                         "scope": "application",
@@ -479,19 +481,19 @@
                         ],
                         "description": "Endpoint of the user account."
                     },
-                    "leetcode.useEndpointTranslation": {
+                    "leetcodeStudyPlan.useEndpointTranslation": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Use endpoint's translation (if available)"
                     },
-                    "leetcode.workspaceFolder": {
+                    "leetcodeStudyPlan.workspaceFolder": {
                         "type": "string",
                         "scope": "application",
                         "description": "The path of the workspace folder to store the problem files.",
                         "default": ""
                     },
-                    "leetcode.filePath": {
+                    "leetcodeStudyPlan.filePath": {
                         "type": "object",
                         "scope": "application",
                         "description": "The output folder and filename to save the problem files.",
@@ -732,13 +734,13 @@
                             }
                         }
                     },
-                    "leetcode.enableStatusBar": {
+                    "leetcodeStudyPlan.enableStatusBar": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Show the LeetCode status bar or not."
                     },
-                    "leetcode.editor.shortcuts": {
+                    "leetcodeStudyPlan.editor.shortcuts": {
                         "type": "array",
                         "default": [
                             "submit",
@@ -764,25 +766,25 @@
                         },
                         "description": "Customize the shortcuts in editors."
                     },
-                    "leetcode.enableSideMode": {
+                    "leetcodeStudyPlan.enableSideMode": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Determine whether to group all webview pages into the second editor column when solving problems."
                     },
-                    "leetcode.nodePath": {
+                    "leetcodeStudyPlan.nodePath": {
                         "type": "string",
                         "default": "node",
                         "scope": "application",
                         "description": "The Node.js executable path. for example, C:\\Program Files\\nodejs\\node.exe"
                     },
-                    "leetcode.colorizeProblems": {
+                    "leetcodeStudyPlan.colorizeProblems": {
                         "type": "boolean",
                         "default": true,
                         "scope": "application",
                         "description": "Add difficulty badge and colorize problems files in explorer tree."
                     },
-                    "leetcode.problems.sortStrategy": {
+                    "leetcodeStudyPlan.problems.sortStrategy": {
                         "type": "string",
                         "default": "None",
                         "scope": "application",
@@ -793,25 +795,25 @@
                         ],
                         "description": "Sorting strategy for problems list."
                     },
-                    "leetcode.allowReportData": {
+                    "leetcodeStudyPlan.allowReportData": {
                         "type": "boolean",
-                        "default": true,
+                        "default": false,
                         "scope": "application",
                         "description": "Allow LeetCode to report anonymous usage data to improve the product."
                     },
-                    "leetcode.dailyPlan.path": {
+                    "leetcodeStudyPlan.dailyPlan.path": {
                         "type": "string",
                         "default": "data/custom-plan.json",
                         "scope": "resource",
-                        "description": "相对于工作区的自定义题单 JSON 路径。默认文件不存在时兼容 data/notion-plan.json。"
+                        "description": "Workspace-relative study plan JSON path. Falls back to data/notion-plan.json when the default file is missing."
                     }
                 }
             }
         ],
         "viewsWelcome": [
             {
-                "view": "leetCodeDailyPlan",
-                "contents": "在工作区中创建 data/custom-plan.json，或选择已有题单 JSON。\n[选择题单 JSON](command:leetcode.dailyPlan.selectPlan)"
+                "view": "leetCodeStudyPlanDailyPlan",
+                "contents": "Create data/custom-plan.json in your workspace, or select an existing plan.\n[Select Study Plan JSON](command:leetcodeStudyPlan.dailyPlan.selectPlan)"
             }
         ]
     },
@@ -823,8 +825,9 @@
         "build": "npx --yes @vscode/vsce@4.0.0 package",
         "vs-publish": "vsce publish",
         "test:daily-plan": "node --test test/daily-plan.test.js",
-        "test": "npm run compile && npm run test:daily-plan",
-        "test:host": "npm run compile && node test/run-host.js"
+        "test": "npm run compile && node --test test/*.test.js",
+        "test:host": "npm run compile && node test/run-host.js",
+        "test:identity": "node --test test/identity.test.js"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.11",
@@ -848,6 +851,6 @@
         "vsc-leetcode-cli": "2.8.1"
     },
     "bugs": {
-        "url": "https://github.com/W4xMell/vscode-leetcode/issues"
+        "url": "https://github.com/W4xMell/vscode-leetcode-study-plan/issues"
     }
 }

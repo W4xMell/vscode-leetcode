@@ -112,7 +112,7 @@ export enum DescriptionConfiguration {
     None = "None",
 }
 
-export const leetcodeHasInited: string = "leetcode.hasInited";
+export const leetcodeHasInited: string = "leetcodeStudyPlan.hasInited";
 
 export enum SortingStrategy {
     None = "None",
@@ -133,7 +133,7 @@ export const urls = {
     graphql: "https://leetcode.com/graphql",
     userGraphql: "https://leetcode.com/graphql",
     login: "https://leetcode.com/accounts/login/",
-    authLoginUrl: `https://leetcode.com/authorize-login/${protocol}/?path=leetcode.vscode-leetcode`,
+    authLoginUrl: `https://leetcode.com/authorize-login/${protocol}/?path=w4xmell.vscode-leetcode-study-plan`,
 };
 
 export const urlsCn = {
@@ -142,11 +142,11 @@ export const urlsCn = {
     graphql: "https://leetcode.cn/graphql",
     userGraphql: "https://leetcode.cn/graphql/",
     login: "https://leetcode.cn/accounts/login/",
-    authLoginUrl: `https://leetcode.cn/authorize-login/${protocol}/?path=leetcode.vscode-leetcode`,
+    authLoginUrl: `https://leetcode.cn/authorize-login/${protocol}/?path=w4xmell.vscode-leetcode-study-plan`,
 };
 
 export const getUrl = (key: string) => {
-    const leetCodeConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("leetcode");
+    const leetCodeConfig: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration("leetcodeStudyPlan");
     const point = leetCodeConfig.get<string>("endpoint", Endpoint.LeetCode);
     switch (point) {
         case Endpoint.LeetCodeCN:

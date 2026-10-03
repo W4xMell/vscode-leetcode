@@ -23,7 +23,7 @@ class LeetCodeExecutor implements Disposable {
         this.leetCodeRootPath = path.join(__dirname, "..", "..", "node_modules", "vsc-leetcode-cli");
         this.nodeExecutable = this.getNodePath();
         this.configurationChangeListener = workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
-            if (event.affectsConfiguration("leetcode.nodePath")) {
+            if (event.affectsConfiguration("leetcodeStudyPlan.nodePath")) {
                 this.nodeExecutable = this.getNodePath();
             }
         }, this);
@@ -31,9 +31,9 @@ class LeetCodeExecutor implements Disposable {
 
     public async getLeetCodeBinaryPath(): Promise<string> {
         if (wsl.useWsl()) {
-            return `${await wsl.toWslPath(`"${path.join(this.leetCodeRootPath, "bin", "leetcode")}"`)}`;
+            return `${await wsl.toWslPath(`"${path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js")}"`)}`;
         }
-        return `"${path.join(this.leetCodeRootPath, "bin", "leetcode")}"`;
+        return `"${path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js")}"`;
     }
 
     public async meetRequirements(context: ExtensionContext): Promise<boolean> {
@@ -218,7 +218,7 @@ class LeetCodeExecutor implements Disposable {
     }
 
     private getNodePath(): string {
-        const extensionConfig: WorkspaceConfiguration = workspace.getConfiguration("leetcode", null);
+        const extensionConfig: WorkspaceConfiguration = workspace.getConfiguration("leetcodeStudyPlan", null);
         return extensionConfig.get<string>("nodePath", "node" /* default value */);
     }
 
@@ -237,7 +237,7 @@ class LeetCodeExecutor implements Disposable {
     }
 
     private async removeOldCache(): Promise<void> {
-        const oldPath: string = path.join(os.homedir(), ".lc");
+        const oldPath: string = path.join(os.homedir(), ".leetcode-study-plan");
         if (await fse.pathExists(oldPath)) {
             await fse.remove(oldPath);
         }

@@ -8,7 +8,7 @@ import { ILeetCodeWebviewOption, LeetCodeWebview } from "./LeetCodeWebview";
 import { markdownEngine } from "./markdownEngine";
 
 class LeetCodePreviewProvider extends LeetCodeWebview {
-    protected readonly viewType: string = "leetcode.preview";
+    protected readonly viewType: string = "leetcodeStudyPlan.preview";
     private node: IProblem;
     private description: IDescription;
     private sideMode: boolean = false;
@@ -124,7 +124,7 @@ class LeetCodePreviewProvider extends LeetCodeWebview {
     protected async onDidReceiveMessage(message: IWebViewMessage): Promise<void> {
         switch (message.command) {
             case "ShowProblem": {
-                await commands.executeCommand("leetcode.showProblem", this.node);
+                await commands.executeCommand("leetcodeStudyPlan.showProblem", this.node);
                 break;
             }
         }

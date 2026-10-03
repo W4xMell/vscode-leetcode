@@ -1,15 +1,15 @@
 # 自定义题单
 
-这个 fork 在原 LeetCode 侧边栏中增加「自定义题单」。标准题复用原插件的题目预览、Code Now、语言模板、Test 和 Submit；本地练习打开工作区中的模板文件。
+这个独立插件 在独立的 LeetCode Study Plan 侧边栏中增加「Study Plans」。标准题复用原插件的题目预览、Code Now、语言模板、Test 和 Submit；本地练习打开工作区中的模板文件。
 
 ## 开始使用
 
 1. 将 `examples/custom-plan/` 下的内容复制到练习工作区。工作区根目录应有 `data/custom-plan.json`、`PLAN.md` 和 `practice/`。
-2. 打开 LeetCode 侧边栏，展开「自定义题单」。点击题目打开原生预览，再点击 Code Now。
+2. 打开 LeetCode 侧边栏，展开「Study Plans」。点击题目打开原生预览，再点击 Code Now。
 3. 通过原插件选择站点和语言，并登录力扣账号。获取题干、模板、测试和提交需要网络及账号；题单本身可以离线查看。
-4. 完成练习后，右键题目选择「切换本次练习完成状态」。进度写入工作区根目录的 `PLAN.md`。
+4. 完成练习后，右键题目选择「Toggle Practice Completion」。进度写入工作区根目录的 `PLAN.md`。
 
-已有题单可以通过视图顶部的文件夹图标或命令「自定义题单: 选择题单 JSON」选择。文件必须位于工作区内；选择成功后写入工作区设置 `leetcode.dailyPlan.path`。也可以直接设置该相对路径。多根工作区默认显示首个包含有效题单的文件夹；选择文件后优先显示该文件所在的工作区文件夹。
+已有题单可以通过视图顶部的文件夹图标或命令「LeetCode Study Plan: Select Study Plan JSON」选择。文件必须位于工作区内；选择成功后写入工作区设置 `leetcodeStudyPlan.dailyPlan.path`。也可以直接设置该相对路径。多根工作区默认显示首个包含有效题单的文件夹；选择文件后优先显示该文件所在的工作区文件夹。
 
 默认路径为 `data/custom-plan.json`。默认文件不存在时，兼容读取 `data/notion-plan.json`。文件、工作区或设置变化会刷新视图；JSON 格式错误时显示错误并保留上一次成功读取的题单。
 
@@ -43,11 +43,11 @@
 
 `day` 和 `order` 是正整数，用于标识分组及组内练习；不得重复。`title` 是显示标题，可以按日期、专题或复习阶段命名。
 
-标准题使用 `kind: "leetcode"`、整数 `leetcodeId` 和 `difficulty`（`简单`、`中等`、`困难`）。可附加 `paidOnly` 标记会员题、`previousDays` 标记复习，以及 `note` 说明练习要求。标准题文件路径和编程语言由原插件设置控制，不需要 `solutionPath`。
+标准题使用 `kind: "leetcode"`、整数 `leetcodeId` 和 `difficulty`（`Easy`、`Medium`、`Hard`，兼容中文难度）。可附加 `paidOnly` 标记会员题、`previousDays` 标记复习，以及 `note` 说明练习要求。标准题文件路径和编程语言由原插件设置控制，不需要 `solutionPath`。
 
 本地练习使用 `kind: "custom"` 和工作区内的 `solutionPath`；打开前需要创建模板。这类练习不调用力扣模板生成或提交接口。
 
-Day 可附加 `sourceUrl`、`algorithmSourceUrl`，题目也可附加 `sourceUrl`。这些链接是可选的，必须是有效的 HTTPS URL。右键「查看题单来源」会打开链接；题目优先使用自己的来源，再使用所在 Day 的解析或来源链接。
+Day 可附加 `sourceUrl`、`algorithmSourceUrl`，题目也可附加 `sourceUrl`。这些链接是可选的，必须是有效的 HTTPS URL。右键「Open Source Link」会打开链接；题目优先使用自己的来源，再使用所在 Day 的解析或来源链接。
 
 ## 完成记录
 
@@ -71,16 +71,16 @@ Notion 页面可以先导出或整理成上述 JSON，并保留来源链接。�
 开发与打包使用 Node.js 22：
 
 ```sh
-git clone https://github.com/W4xMell/vscode-leetcode.git
-cd vscode-leetcode
+git clone https://github.com/W4xMell/vscode-leetcode-study-plan.git
+cd vscode-leetcode-study-plan
 npm ci
 npm test
 npm run lint
 npm run build
-code --install-extension vscode-leetcode-0.18.6.vsix --force
+code --install-extension vscode-leetcode-study-plan-0.1.0.vsix --force
 ```
 
-安装后执行 `Developer: Reload Window`。扩展保留原标识 `LeetCode.vscode-leetcode`，本地 VSIX 会替换同标识的已安装版本。此 fork 尚未发布到 VS Code Marketplace。
+安装后执行 `Developer: Reload Window`。扩展使用独立标识 `W4xMell.vscode-leetcode-study-plan`，可以与原版同时安装。命令与设置使用 `leetcodeStudyPlan.*`，账号和 CLI 缓存位于 `~/.leetcode-study-plan/`，需要单独登录。此插件尚未发布到 VS Code Marketplace。
 
 ## 开发与验证
 

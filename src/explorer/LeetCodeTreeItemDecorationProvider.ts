@@ -19,7 +19,7 @@ export class LeetCodeTreeItemDecorationProvider implements FileDecorationProvide
             return;
         }
 
-        if (uri.scheme !== "leetcode" && uri.authority !== "problems") {
+        if (uri.scheme !== "leetcode-study-plan" || uri.authority !== "problems") {
             return;
         }
 
@@ -33,7 +33,7 @@ export class LeetCodeTreeItemDecorationProvider implements FileDecorationProvide
 
     private isDifficultyBadgeEnabled(): boolean {
         const configuration: WorkspaceConfiguration = workspace.getConfiguration();
-        return configuration.get<boolean>("leetcode.colorizeProblems", false);
+        return configuration.get<boolean>("leetcodeStudyPlan.colorizeProblems", false);
     }
 }
 

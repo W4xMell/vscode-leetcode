@@ -7,7 +7,7 @@ export interface IPlanProblem {
     order: number;
     title: string;
     kind: "leetcode" | "custom";
-    leetcodeId: number | null;
+    leetcodeId?: number | null;
     difficulty?: string;
     paidOnly?: boolean;
     previousDays?: number[];
@@ -28,11 +28,11 @@ export interface IDailyPlan { days: IPlanDay[]; }
 export interface IProgressEntry { done: boolean; offset: number; }
 
 export function validatePlan(plan: IDailyPlan): IDailyPlan {
-    if (!plan || !Array.isArray(plan.days)) throw new Error("题单必须包含 days 数组。");
+    if (!plan || !Array.isArray(plan.days)) throw new Error("A study plan must contain a days array.");
     const dayNumbers = new Set<number>();
     for (const day of plan.days) {
         if (!day || !Number.isInteger(day.day) || day.day < 1 || dayNumbers.has(day.day) || typeof day.title !== "string" || !Array.isArray(day.problems)) {
-            throw new Error("题单中的 Day 编号、标题或题目列表无效。");
+            throw new Error("Invalid group number, title, or problem list.");
         }
         dayNumbers.add(day.day);
         validateSource(day.sourceUrl);
@@ -40,16 +40,16 @@ export function validatePlan(plan: IDailyPlan): IDailyPlan {
         const orders = new Set<number>();
         for (const problem of day.problems) {
             if (!problem || !Number.isInteger(problem.order) || problem.order < 1 || orders.has(problem.order) || typeof problem.title !== "string") {
-                throw new Error(`Day ${day.day} 的题目序号或标题无效。`);
+                throw new Error(`Invalid problem order or title in Day ${day.day}.`);
             }
             orders.add(problem.order);
             validateSource(problem.sourceUrl);
             if (problem.kind === "leetcode") {
-                if (!Number.isInteger(problem.leetcodeId) || problem.leetcodeId! < 1 || ["简单", "中等", "困难"].indexOf(problem.difficulty || "") < 0) {
-                    throw new Error(`Day ${day.day} 的力扣题号或难度无效。`);
+                if (!Number.isInteger(problem.leetcodeId) || problem.leetcodeId! < 1 || ["Easy", "Medium", "Hard", "简单", "中等", "困难"].indexOf(problem.difficulty || "") < 0) {
+                    throw new Error(`Invalid LeetCode ID or difficulty in Day ${day.day}.`);
                 }
             } else if (problem.kind !== "custom" || typeof problem.solutionPath !== "string") {
-                throw new Error(`Day ${day.day} 的题目类型或本地模板路径无效。`);
+                throw new Error(`Invalid problem kind or local template path in Day ${day.day}.`);
             }
         }
     }
@@ -60,7 +60,7 @@ function validateSource(url?: string): void {
     if (url === undefined) return;
     try {
         if (typeof url !== "string" || new URL(url).protocol !== "https:") throw new Error();
-    } catch { throw new Error("题单来源链接必须是有效的 HTTPS URL。"); }
+    } catch { throw new Error("Source links must be valid HTTPS URLs."); }
 }
 
 export function practiceKey(day: number, order: number): string { return `${day}:${order}`; }
@@ -75,7 +75,7 @@ export function parseProgress(markdown: string): Map<string, IProgressEntry> {
         const entry = line.match(/^- \[([ xX])\] (\d+)\./);
         if (entry && day !== undefined) {
             const key = practiceKey(day, Number(entry[2]));
-            if (result.has(key)) throw new Error(`PLAN.md 中有重复的练习条目：${key}`);
+            if (result.has(key)) throw new Error(`Duplicate practice entry in PLAN.md: ${key}`);
             result.set(key, { done: entry[1].toLowerCase() === "x", offset: offset + 3 });
         }
         offset += line.length + 1;
@@ -84,18 +84,18 @@ export function parseProgress(markdown: string): Map<string, IProgressEntry> {
 }
 
 export function workspacePath(root: string, relative: string): string {
-    if (typeof relative !== "string" || path.isAbsolute(relative)) throw new Error("路径必须相对于练习仓库。");
+    if (typeof relative !== "string" || path.isAbsolute(relative)) throw new Error("Paths must be relative to the workspace.");
     const full = path.resolve(root, relative);
     const difference = path.relative(root, full);
     if (!difference || difference === ".." || difference.startsWith(`..${path.sep}`) || path.isAbsolute(difference)) {
-        throw new Error("文件路径必须位于练习仓库内。");
+        throw new Error("Files must stay inside the workspace.");
     }
     return full;
 }
 
 export function toLeetCodeProblem(problem: IPlanProblem): IProblem {
-    if (problem.kind !== "leetcode") throw new Error("自定义变式只能在本地练习。");
-    const difficulty = { 简单: "Easy", 中等: "Medium", 困难: "Hard" };
+    if (problem.kind !== "leetcode") throw new Error("Custom exercises can only be practiced locally.");
+    const difficulty = { Easy: "Easy", Medium: "Medium", Hard: "Hard", 简单: "Easy", 中等: "Medium", 困难: "Hard" };
     return {
         id: String(problem.leetcodeId),
         name: problem.title.replace(/^\d+[｜.]\s*/, ""),

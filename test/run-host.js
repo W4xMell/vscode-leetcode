@@ -11,17 +11,21 @@ fs.cpSync(path.join(__dirname, '../examples/custom-plan'), workspace, { recursiv
 fs.mkdirSync(path.join(profile, 'User'), { recursive: true });
 fs.mkdirSync(extensions);
 fs.writeFileSync(path.join(profile, 'User/settings.json'), JSON.stringify({
-  'leetcode.endpoint': 'leetcode-cn',
-  'leetcode.defaultLanguage': 'typescript',
-  'leetcode.workspaceFolder': workspace,
-  'leetcode.filePath': { default: { folder: 'solutions', filename: '${id}.${ext}' } },
-  'leetcode.nodePath': process.execPath,
-  'leetcode.showDescription': 'In Webview',
-  'leetcode.editor.shortcuts': ['submit', 'test'],
-  'leetcode.hint.configWebviewMarkdown': false,
-  'leetcode.hint.commentDescription': false,
-  'leetcode.hint.setDefaultLanguage': false,
-  'leetcode.hint.commandShortcut': false
+  'leetcode.endpoint': 'leetcode',
+  'leetcode.defaultLanguage': 'python3',
+  'leetcode.workspaceFolder': path.join(directory, 'upstream-solutions'),
+  'leetcodeStudyPlan.allowReportData': false,
+  'leetcodeStudyPlan.endpoint': 'leetcode-cn',
+  'leetcodeStudyPlan.defaultLanguage': 'typescript',
+  'leetcodeStudyPlan.workspaceFolder': workspace,
+  'leetcodeStudyPlan.filePath': { default: { folder: 'solutions', filename: '${id}.${ext}' } },
+  'leetcodeStudyPlan.nodePath': process.execPath,
+  'leetcodeStudyPlan.showDescription': 'In Webview',
+  'leetcodeStudyPlan.editor.shortcuts': ['submit', 'test'],
+  'leetcodeStudyPlan.hint.configWebviewMarkdown': false,
+  'leetcodeStudyPlan.hint.commentDescription': false,
+  'leetcodeStudyPlan.hint.setDefaultLanguage': false,
+  'leetcodeStudyPlan.hint.commandShortcut': false
 }, null, 2));
 const result = spawnSync(process.env.VSCODE_EXECUTABLE || (process.platform === 'win32' ? 'code.cmd' : 'code'), [
   '--new-window', '--user-data-dir', profile, '--extensions-dir', extensions,

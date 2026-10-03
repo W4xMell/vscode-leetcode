@@ -19,7 +19,7 @@ test('全部题目可传递给原插件，变式保持本地练习', () => {
       assert.equal(node.locked, Boolean(problem.paidOnly));
       native++;
     } else {
-      assert.throws(() => toLeetCodeProblem(problem), /本地/);
+      assert.throws(() => toLeetCodeProblem(problem), /locally/);
       custom++;
     }
   }
@@ -46,12 +46,12 @@ test('示例 Markdown 与题单中的练习逐一对应', () => {
 });
 
 test('拒绝重复练习标识及仓库外模板路径', () => {
-  assert.throws(() => parseProgress('## Day 1\n- [ ] 1. A\n- [ ] 1. B'),/重复/);
-  assert.throws(() => workspacePath(root,'../outside.ts'),/仓库内/);
-  assert.throws(() => workspacePath(root,'/tmp/outside.ts'),/相对/);
+  assert.throws(() => parseProgress('## Day 1\n- [ ] 1. A\n- [ ] 1. B'),/Duplicate/);
+  assert.throws(() => workspacePath(root,'../outside.ts'),/workspace/);
+  assert.throws(() => workspacePath(root,'/tmp/outside.ts'),/relative/);
   const invalid = structuredClone(plan);
   invalid.days[0].problems[1].order=1;
-  assert.throws(() => validatePlan(invalid),/序号/);
+  assert.throws(() => validatePlan(invalid),/order/);
 });
 
 
@@ -64,5 +64,5 @@ test('来源可省略，拒绝无效来源和空条目', () => {
   }
   const invalid = structuredClone(plan);
   invalid.days[0].problems.push(null);
-  assert.throws(() => validatePlan(invalid), /序号/);
+  assert.throws(() => validatePlan(invalid), /order/);
 });

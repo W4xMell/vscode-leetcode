@@ -9,13 +9,13 @@ export class LeetCodeStatusBarItem implements vscode.Disposable {
 
     constructor() {
         this.statusBarItem = vscode.window.createStatusBarItem();
-        this.statusBarItem.command = "leetcode.manageSessions";
+        this.statusBarItem.command = "leetcodeStudyPlan.manageSessions";
     }
 
     public updateStatusBar(status: UserStatus, user?: string): void {
         switch (status) {
             case UserStatus.SignedIn:
-                this.statusBarItem.text = `LeetCode: ${user}`;
+                this.statusBarItem.text = `Study Plan: ${user}`;
                 break;
             case UserStatus.SignedOut:
             default:

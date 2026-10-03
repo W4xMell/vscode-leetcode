@@ -2,26 +2,26 @@
   "days": [
     {
       "day": 1,
-      "title": "Day 1 · 数组与哈希",
+      "title": "Day 1 - Arrays and Hashing",
       "sourceUrl": "https://leetcode.cn/problems/two-sum/",
       "problems": [
         {
           "order": 1,
-          "title": "两数之和",
+          "title": "Two Sum",
           "kind": "leetcode",
           "leetcodeId": 1,
-          "difficulty": "简单"
+          "difficulty": "Easy"
         },
         {
           "order": 2,
-          "title": "有效的括号",
+          "title": "Valid Parentheses",
           "kind": "leetcode",
           "leetcodeId": 20,
-          "difficulty": "简单"
+          "difficulty": "Easy"
         },
         {
           "order": 3,
-          "title": "数组去重（本地练习）",
+          "title": "Remove Duplicates (Local Exercise)",
           "kind": "custom",
           "solutionPath": "practice/unique.ts"
         }
@@ -29,14 +29,14 @@
     },
     {
       "day": 2,
-      "title": "Day 2 · 复习",
+      "title": "Day 2 - Review",
       "problems": [
         {
           "order": 1,
-          "title": "两数之和",
+          "title": "Two Sum",
           "kind": "leetcode",
           "leetcodeId": 1,
-          "difficulty": "简单",
+          "difficulty": "Easy",
           "previousDays": [
             1
           ]

@@ -3,6 +3,13 @@ All notable changes to the "leetcode" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.1.0] - Standalone Study Plan Extension
+### Added
+- Independent extension ID, command/settings namespaces, views, authorization callback and CLI state.
+- English-only README and development guide, with separate Chinese documentation.
+- English difficulty labels with compatibility for imported Chinese study plans.
+- Extension identity, CLI cache isolation and coexistence checks.
+
 ## [0.18.6] - Custom study plan fork
 ### Added
 - Workspace JSON study plans in the existing LeetCode sidebar, using native preview and Code Now.
