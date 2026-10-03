@@ -1,8 +1,8 @@
 {
     "name": "vscode-leetcode",
-    "displayName": "LeetCode",
-    "description": "Solve LeetCode problems in VS Code",
-    "version": "0.18.4",
+    "displayName": "LeetCode · 自定义题单",
+    "description": "Solve LeetCode problems in VS Code with workspace-defined custom study plans.",
+    "version": "0.18.6",
     "author": "LeetCode",
     "publisher": "LeetCode",
     "license": "MIT",
@@ -12,9 +12,9 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/LeetCode-OpenSource/vscode-leetcode"
+        "url": "https://github.com/W4xMell/vscode-leetcode"
     },
-    "homepage": "https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/README.md",
+    "homepage": "https://github.com/W4xMell/vscode-leetcode",
     "categories": [
         "Other",
         "Snippets"
@@ -39,7 +39,10 @@
         "onCommand:leetcode.submitSolution",
         "onCommand:leetcode.switchDefaultLanguage",
         "onCommand:leetcode.problems.sort",
-        "onView:leetCodeExplorer"
+        "onView:leetCodeExplorer",
+        "workspaceContains:data/notion-plan.json",
+        "onView:leetCodeDailyPlan",
+        "workspaceContains:data/custom-plan.json"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -141,6 +144,41 @@
                 "title": "Sort Problems",
                 "category": "LeetCode",
                 "icon": "$(sort-precedence)"
+            },
+            {
+                "command": "leetcode.dailyPlan.refresh",
+                "title": "刷新题单",
+                "category": "自定义题单",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "leetcode.dailyPlan.preview",
+                "title": "预览题目",
+                "category": "自定义题单"
+            },
+            {
+                "command": "leetcode.dailyPlan.codeNow",
+                "title": "Code Now",
+                "category": "自定义题单",
+                "icon": "$(code)"
+            },
+            {
+                "command": "leetcode.dailyPlan.openSource",
+                "title": "查看题单来源",
+                "category": "自定义题单",
+                "icon": "$(link-external)"
+            },
+            {
+                "command": "leetcode.dailyPlan.toggleDone",
+                "title": "切换本次练习完成状态",
+                "category": "自定义题单",
+                "icon": "$(check)"
+            },
+            {
+                "command": "leetcode.dailyPlan.selectPlan",
+                "title": "选择题单 JSON",
+                "category": "自定义题单",
+                "icon": "$(folder-opened)"
             }
         ],
         "viewsContainers": {
@@ -157,6 +195,10 @@
                 {
                     "id": "leetCodeExplorer",
                     "name": "Problems"
+                },
+                {
+                    "id": "leetCodeDailyPlan",
+                    "name": "自定义题单"
                 }
             ]
         },
@@ -196,6 +238,16 @@
                     "command": "leetcode.problems.sort",
                     "when": "view == leetCodeExplorer",
                     "group": "overflow@3"
+                },
+                {
+                    "command": "leetcode.dailyPlan.refresh",
+                    "when": "view == leetCodeDailyPlan",
+                    "group": "navigation"
+                },
+                {
+                    "command": "leetcode.dailyPlan.selectPlan",
+                    "when": "view == leetCodeDailyPlan",
+                    "group": "navigation@1"
                 }
             ],
             "view/item/context": [
@@ -223,6 +275,31 @@
                     "command": "leetcode.removeFavorite",
                     "when": "view == leetCodeExplorer && viewItem == problem-favorite",
                     "group": "inline"
+                },
+                {
+                    "command": "leetcode.dailyPlan.codeNow",
+                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "leetcode.dailyPlan.preview",
+                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "group": "practice@1"
+                },
+                {
+                    "command": "leetcode.dailyPlan.codeNow",
+                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "group": "practice@2"
+                },
+                {
+                    "command": "leetcode.dailyPlan.toggleDone",
+                    "when": "view == leetCodeDailyPlan && viewItem =~ /^dailyPlanProblem/",
+                    "group": "practice@3"
+                },
+                {
+                    "command": "leetcode.dailyPlan.openSource",
+                    "when": "view == leetCodeDailyPlan",
+                    "group": "source@1"
                 }
             ],
             "commandPalette": [
@@ -245,6 +322,22 @@
                 {
                     "command": "leetcode.removeFavorite",
                     "when": "never"
+                },
+                {
+                    "command": "leetcode.dailyPlan.preview",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcode.dailyPlan.codeNow",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcode.dailyPlan.toggleDone",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcode.dailyPlan.openSource",
+                    "when": "false"
                 }
             ],
             "explorer/context": [
@@ -705,8 +798,20 @@
                         "default": true,
                         "scope": "application",
                         "description": "Allow LeetCode to report anonymous usage data to improve the product."
+                    },
+                    "leetcode.dailyPlan.path": {
+                        "type": "string",
+                        "default": "data/custom-plan.json",
+                        "scope": "resource",
+                        "description": "相对于工作区的自定义题单 JSON 路径。默认文件不存在时兼容 data/notion-plan.json。"
                     }
                 }
+            }
+        ],
+        "viewsWelcome": [
+            {
+                "view": "leetCodeDailyPlan",
+                "contents": "在工作区中创建 data/custom-plan.json，或选择已有题单 JSON。\n[选择题单 JSON](command:leetcode.dailyPlan.selectPlan)"
             }
         ]
     },
@@ -714,9 +819,12 @@
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
-        "lint": "tslint --project tsconfig.json -e src/*.d.ts -t verbose",
-        "build": "vsce package",
-        "vs-publish": "vsce publish"
+        "lint": "tslint --project tsconfig.json -e \"src/*.d.ts\" -t verbose",
+        "build": "npx --yes @vscode/vsce@4.0.0 package",
+        "vs-publish": "vsce publish",
+        "test:daily-plan": "node --test test/daily-plan.test.js",
+        "test": "npm run compile && npm run test:daily-plan",
+        "test:host": "npm run compile && node test/run-host.js"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.11",
@@ -738,5 +846,8 @@
         "require-from-string": "^2.0.2",
         "unescape-js": "^1.1.4",
         "vsc-leetcode-cli": "2.8.1"
+    },
+    "bugs": {
+        "url": "https://github.com/W4xMell/vscode-leetcode/issues"
     }
 }

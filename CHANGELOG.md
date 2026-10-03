@@ -3,6 +3,12 @@ All notable changes to the "leetcode" extension will be documented in this file.
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
+## [0.18.6] - Custom study plan fork
+### Added
+- Workspace JSON study plans in the existing LeetCode sidebar, using native preview and Code Now.
+- Plan file selection, Markdown completion tracking, optional source links and local exercises.
+- Standalone example fixtures, VS Code host tests and VSIX build artifacts in CI.
+
 ## [0.18.4]
 ### Added
 - change graphql path

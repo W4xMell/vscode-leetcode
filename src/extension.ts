@@ -26,8 +26,10 @@ import { leetCodeSubmissionProvider } from "./webview/leetCodeSubmissionProvider
 import { markdownEngine } from "./webview/markdownEngine";
 import TrackData from "./utils/trackingUtils";
 import { globalState } from "./globalState";
+import { initializeDailyPlan } from "./dailyPlan/DailyPlanProvider";
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    initializeDailyPlan(context);
     try {
         if (!(await leetCodeExecutor.meetRequirements(context))) {
             throw new Error("The environment doesn't meet requirements.");

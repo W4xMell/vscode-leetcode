@@ -12,3 +12,6 @@ tslint.json
 ACKNOWLEDGEMENTS.md
 docs
 .github
+
+examples/**
+out/examples/**

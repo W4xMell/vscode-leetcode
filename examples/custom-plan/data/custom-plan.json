@@ -1,0 +1,47 @@
+{
+  "days": [
+    {
+      "day": 1,
+      "title": "Day 1 · 数组与哈希",
+      "sourceUrl": "https://leetcode.cn/problems/two-sum/",
+      "problems": [
+        {
+          "order": 1,
+          "title": "两数之和",
+          "kind": "leetcode",
+          "leetcodeId": 1,
+          "difficulty": "简单"
+        },
+        {
+          "order": 2,
+          "title": "有效的括号",
+          "kind": "leetcode",
+          "leetcodeId": 20,
+          "difficulty": "简单"
+        },
+        {
+          "order": 3,
+          "title": "数组去重（本地练习）",
+          "kind": "custom",
+          "solutionPath": "practice/unique.ts"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "title": "Day 2 · 复习",
+      "problems": [
+        {
+          "order": 1,
+          "title": "两数之和",
+          "kind": "leetcode",
+          "leetcodeId": 1,
+          "difficulty": "简单",
+          "previousDays": [
+            1
+          ]
+        }
+      ]
+    }
+  ]
+}

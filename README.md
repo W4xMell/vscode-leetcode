@@ -1,4 +1,4 @@
-# LeetCode
+# LeetCode with Custom Study Plans
 
 > Solve LeetCode problems in VS Code
 
@@ -21,6 +21,28 @@
 </p>
 
 - English Document | [中文文档](https://github.com/LeetCode-OpenSource/vscode-leetcode/blob/master/docs/README_zh-CN.md)
+
+## Custom study plans
+
+This fork adds a **自定义题单 / Custom Study Plans** view to the existing LeetCode sidebar. Define ordered study groups in a workspace JSON file, select a problem, and use the original **Code Now**, **Test**, and **Submit** workflow. Repeated problems share a solution file and keep separate practice checkboxes in `PLAN.md`.
+
+1. Copy the contents of [examples/custom-plan](examples/custom-plan) into your practice workspace.
+2. Open the LeetCode sidebar and expand **自定义题单**. The default plan is `data/custom-plan.json`.
+3. Select a problem to open the native preview, then click **Code Now**. Local exercises open their workspace templates.
+4. Right-click a problem to toggle its completion state or open an optional source link.
+
+Use **自定义题单: 选择题单 JSON** to select another JSON file inside the workspace, or set `leetcode.dailyPlan.path`. Existing `data/notion-plan.json` workspaces remain supported when the default plan is absent. Plans are local files; Notion integration consists of imported data and optional source links, without automatic synchronization.
+
+See [中文使用与构建说明](docs/daily-plan.zh-CN.md) for the schema, VSIX installation, and tests. This fork is distributed as a locally built VSIX; the Marketplace links below refer to the upstream extension. It retains the upstream extension identifier, so installing its VSIX replaces that installed version.
+
+```sh
+npm ci
+npm test
+npm run lint
+npm run build
+```
+
+Build and test tooling uses Node.js 22. A standalone checkout includes all test fixtures.
 
 ## ❗️ Attention ❗️- Workaround to login to LeetCode endpoint
 

@@ -1,0 +1,32 @@
+{
+  "name": "daily-plan-test-host",
+  "publisher": "local-test",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.57.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "*"
+  ],
+  "contributes": {
+    "views": {
+      "explorer": [
+        {
+          "id": "leetCodeDailyPlan",
+          "name": "Daily plan test"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Daily plan test",
+      "properties": {
+        "leetcode.dailyPlan.path": {
+          "type": "string",
+          "default": "data/custom-plan.json",
+          "scope": "resource"
+        }
+      }
+    }
+  }
+}
