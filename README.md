@@ -4,7 +4,7 @@
 
 A standalone VS Code extension for practicing LeetCode problems with workspace study plans, your own website lists, and problem/group timers. Preview a problem, generate a solution with **Code Now**, then test and submit from the editor.
 
-[Chinese documentation](README.zh-CN.md) · [Plan format and development](docs/study-plan.md) · [Changelog](CHANGELOG.md) · [Example workspace](examples/custom-plan)
+[Chinese documentation](README.zh-CN.md) · [Plan format and development](docs/study-plan.md) · [Changelog](CHANGELOG.md) · [Project workflow (Chinese)](docs/project-workflow.zh-CN.md) · [Example workspace](examples/custom-plan)
 
 ## Features
 
@@ -42,7 +42,7 @@ npm run install:extension -- --profile "Practice"
 
 `VSCODE_EXECUTABLE` can also specify the CLI. The script accepts `--extensions-dir`, `--user-data-dir`, and `--no-force`. On macOS, enable `code` with **Shell Command: Install 'code' command in PATH**.
 
-To build without installing, run `npm run build`. Install the resulting `.vsix` with **Extensions: Install from VSIX...**, or download a VSIX artifact from [GitHub Actions](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml). This extension is not published to the VS Code Marketplace.
+To build without installing, run `npm run build`. Install the resulting `.vsix` with **Extensions: Install from VSIX...**, or download a VSIX artifact from [GitHub Actions](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml). Install the published extension from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Mafty43211.vscode-leetcode-study-plan).
 
 ## Start practicing
 
@@ -94,7 +94,7 @@ With a solution active, run **LeetCode Study Plan: Open Current Problem Descript
 | `leetcodeStudyPlan.timer.groupMinutes` | Group allowance / `120` |
 | `leetcodeStudyPlan.editor.shortcuts` | Editor actions / `submit`, `test`, `description` |
 
-The extension ID is `W4xMell.vscode-leetcode-study-plan`; commands and settings use `leetcodeStudyPlan.*`. CLI account/configuration/cache live in `~/.leetcode-study-plan/`, and the default solution directory is `~/.leetcode-study-plan-solutions/`. The upstream extension can remain installed: settings, credentials, and caches are separate. Browser authorization and Cookie login are supported.
+The extension ID is `Mafty43211.vscode-leetcode-study-plan`; commands and settings use `leetcodeStudyPlan.*`. CLI account/configuration/cache live in `~/.leetcode-study-plan/`, and the default solution directory is `~/.leetcode-study-plan-solutions/`. The upstream extension can remain installed: settings, credentials, and caches are separate. Browser authorization and Cookie login are supported.
 
 ## Development and limitations
 

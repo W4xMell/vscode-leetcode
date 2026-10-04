@@ -133,7 +133,7 @@ export const urls = {
     graphql: "https://leetcode.com/graphql",
     userGraphql: "https://leetcode.com/graphql",
     login: "https://leetcode.com/accounts/login/",
-    authLoginUrl: `https://leetcode.com/authorize-login/${protocol}/?path=w4xmell.vscode-leetcode-study-plan`,
+    authLoginUrl: `https://leetcode.com/authorize-login/${protocol}/?path=mafty43211.vscode-leetcode-study-plan`,
 };
 
 export const urlsCn = {
@@ -142,7 +142,7 @@ export const urlsCn = {
     graphql: "https://leetcode.cn/graphql",
     userGraphql: "https://leetcode.cn/graphql/",
     login: "https://leetcode.cn/accounts/login/",
-    authLoginUrl: `https://leetcode.cn/authorize-login/${protocol}/?path=w4xmell.vscode-leetcode-study-plan`,
+    authLoginUrl: `https://leetcode.cn/authorize-login/${protocol}/?path=mafty43211.vscode-leetcode-study-plan`,
 };
 
 export const getUrl = (key: string) => {

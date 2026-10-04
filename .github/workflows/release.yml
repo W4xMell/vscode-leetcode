@@ -1,0 +1,152 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag (for example v0.2.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      vsix: ${{ steps.version.outputs.vsix }}
+      sha: ${{ steps.source.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate tag and release source
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          git rev-parse --verify "refs/tags/$RELEASE_TAG"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+          git merge-base --is-ancestor HEAD origin/master
+      - id: version
+        env:
+          RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+        run: node scripts/release-info.js "$RELEASE_TAG"
+      - id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  checks:
+    needs: validate
+    uses: ./.github/workflows/build.yml
+    with:
+      source: ${{ needs.validate.outputs.sha }}
+
+  github-release:
+    needs: [validate, checks]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: custom-plan-vsix-ubuntu-latest
+      - name: Prepare release assets
+        env:
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          GITHUB_SHA: ${{ needs.validate.outputs.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, zipfile
+          from pathlib import Path
+          manifest = json.loads(Path('package.json').read_text())
+          package = Path(f"{manifest['name']}-{manifest['version']}.vsix")
+          with zipfile.ZipFile(package) as archive:
+              packaged = json.loads(archive.read('extension/package.json'))
+              for key in ['publisher', 'name', 'version']:
+                  assert packaged[key] == manifest[key], f'VSIX {key} mismatch'
+              assert 'extension/out/src/extension.js' in archive.namelist()
+          PY
+          node scripts/release-info.js "$RELEASE_TAG" --files
+      - name: Upload and publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          VSIX: ${{ needs.validate.outputs.vsix }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" --json tagName > /dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "$RELEASE_TAG" --notes-file release-notes.md
+          fi
+          gh release view "$RELEASE_TAG" --json assets > existing-assets.json
+          for asset in "$VSIX" SHA256SUMS release-metadata.json; do
+            if node -e 'const a=require("./existing-assets.json").assets;process.exit(a.some(x=>x.name===process.argv[1])?0:1)' "$asset"; then
+              mkdir -p existing
+              gh release download "$RELEASE_TAG" --pattern "$asset" --dir existing
+              cmp "$asset" "existing/$asset"
+            else
+              gh release upload "$RELEASE_TAG" "$asset"
+            fi
+          done
+          gh release edit "$RELEASE_TAG" --draft=false
+
+  marketplace:
+    needs: [validate, github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Download the released VSIX
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+          VSIX: ${{ needs.validate.outputs.vsix }}
+        run: |
+          gh release download "$RELEASE_TAG" --pattern "$VSIX" --pattern SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - name: Sign in with Microsoft Entra ID
+        if: vars.MARKETPLACE_AUTH == 'azure'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Publish with Microsoft Entra ID
+        if: vars.MARKETPLACE_AUTH == 'azure'
+        run: npm run vs-publish -- --azure-credential
+      - name: Publish with existing Marketplace PAT
+        if: vars.MARKETPLACE_AUTH != 'azure'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: npm run vs-publish

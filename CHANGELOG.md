@@ -2,6 +2,17 @@
 
 Notable changes to LeetCode Study Plan are recorded here. Versions follow the extension manifest; changes are grouped by behavior.
 
+## [0.2.1] - 2026-10-05
+
+### Added
+
+- Tag-triggered GitHub Release and Marketplace uploads using the same tested VSIX, with version checks, SHA-256 checksums, and source metadata.
+- A manual release workflow for an existing version tag and a pinned local publish command.
+
+### Fixed
+
+- Match browser authorization callbacks and installation documentation to the registered Marketplace publisher, `Mafty43211`.
+
 ## [0.2.0] - 2026-10-04
 
 ### Added

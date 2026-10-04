@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, '..');
 const manifest = require('../package.json');
 
 test('standalone identity, settings and views do not use upstream IDs', () => {
-  assert.equal(`${manifest.publisher}.${manifest.name}`, 'W4xMell.vscode-leetcode-study-plan');
+  assert.equal(`${manifest.publisher}.${manifest.name}`, 'Mafty43211.vscode-leetcode-study-plan');
   assert.ok(manifest.contributes.commands.every(command => command.command.startsWith('leetcodeStudyPlan.')));
   for(const command of manifest.contributes.commands) assert.ok(manifest.activationEvents.includes('onCommand:'+command.command),command.command);
   assert.ok(manifest.activationEvents.includes('onView:leetCodeStudyPlanPersonalLists'));
@@ -17,12 +17,12 @@ test('standalone identity, settings and views do not use upstream IDs', () => {
   assert.deepEqual(Object.keys(manifest.contributes.views), ['leetcode-study-plan']);
   assert.ok(manifest.contributes.views['leetcode-study-plan'].every(view => view.id.startsWith('leetCodeStudyPlan')));
   const shared = fs.readFileSync(path.join(root, 'src/shared.ts'), 'utf8');
-  assert.equal((shared.match(/path=w4xmell\.vscode-leetcode-study-plan/g) || []).length, 2);
+  assert.equal((shared.match(/path=mafty43211\.vscode-leetcode-study-plan/g) || []).length, 2);
   assert.ok(!shared.includes('path=leetcode.vscode-leetcode'));
 });
 
 test('maintained documentation has valid local links and English pages contain no Chinese text', () => {
-  for (const filename of ['README.md', 'README.zh-CN.md', 'docs/study-plan.md', 'CHANGELOG.md', 'ACKNOWLEDGEMENTS.md']) {
+  for (const filename of ['README.md', 'README.zh-CN.md', 'docs/study-plan.md', 'docs/project-workflow.zh-CN.md', 'CHANGELOG.md', 'ACKNOWLEDGEMENTS.md']) {
     const full = path.join(root, filename);
     const content = fs.readFileSync(full, 'utf8');
     if (filename === 'README.md' || filename === 'docs/study-plan.md') assert.ok(!/[\u3400-\u9fff]/u.test(content), filename);

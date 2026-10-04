@@ -64,3 +64,8 @@ out
 
 # Mac
 .DS_Store
+
+# Generated release provenance
+SHA256SUMS
+release-metadata.json
+release-notes.md

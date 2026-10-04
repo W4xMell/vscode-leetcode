@@ -138,7 +138,4 @@ Automated host tests simulate website and CLI responses. Anonymous China-site pu
 
 ## Next-version TODO
 
-- [ ] Load Markdown rendering and syntax highlighting on demand. Register only the languages actually needed; evaluate bundling the extension-host entry to reduce dependency files. Verify first/repeated previews, highlighting, error recovery, and execution from an installed VSIX.
-- [ ] Reduce hidden Webview memory. Evaluate removing `retainContextWhenHidden: true` and restoring necessary content/scroll state when shown. Verify problem descriptions, solutions, submission results, and editor focus.
-
-Measure cold activation, first/repeated preview cost, and memory with multiple panels visible/hidden. Standalone Node module-loading measurements identify candidates; they are not measurements of VS Code extension-host performance.
+Deferred Markdown/highlighting loading and hidden Webview memory work are tracked in the [project workflow and TODO plan (Chinese)](project-workflow.zh-CN.md). That document also defines the proposed contribution, release, and CI/CD process. These workflows and repository rules remain planned until their implementation tasks are completed.

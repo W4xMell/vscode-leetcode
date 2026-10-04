@@ -4,7 +4,7 @@
 
 独立的 VS Code 力扣练习插件，支持工作区自定义题单、网站自建题单，以及单题和整组计时。通过侧边栏预览题目，使用 Code Now 生成解题文件，再从编辑器测试和提交。
 
-[English](README.md) · [题单格式与开发指南](docs/study-plan.md) · [版本变更](CHANGELOG.md) · [示例工作区](examples/custom-plan)
+[English](README.md) · [题单格式与开发指南](docs/study-plan.md) · [版本变更](CHANGELOG.md) · [项目流程与 TODO](docs/project-workflow.zh-CN.md) · [示例工作区](examples/custom-plan)
 
 ## 功能
 
@@ -42,7 +42,7 @@ npm run install:extension -- --profile "Practice"
 
 也可通过 `VSCODE_EXECUTABLE` 指定 CLI。脚本支持 `--extensions-dir`、`--user-data-dir` 和 `--no-force`。macOS 找不到 `code` 时，在 VS Code 命令面板执行 `Shell Command: Install 'code' command in PATH`。
 
-仅构建安装包时，执行 `npm run build`。通过 `Extensions: Install from VSIX...` 安装生成的 `.vsix`，或从 [GitHub Actions](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml) 下载 VSIX 构建产物。插件尚未发布到 VS Code Marketplace。
+仅构建安装包时，执行 `npm run build`。通过 `Extensions: Install from VSIX...` 安装生成的 `.vsix`，或从 [GitHub Actions](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/workflows/build.yml) 下载 VSIX 构建产物。也可从 [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=Mafty43211.vscode-leetcode-study-plan) 安装正式版本。
 
 ## 开始练习
 
@@ -94,7 +94,7 @@ npm run install:extension -- --profile "Practice"
 | `leetcodeStudyPlan.timer.groupMinutes` | 整组时长；默认 `120` 分钟 |
 | `leetcodeStudyPlan.editor.shortcuts` | 编辑器操作；默认 `submit`、`test`、`description` |
 
-扩展 ID 为 `W4xMell.vscode-leetcode-study-plan`，命令与设置使用 `leetcodeStudyPlan.*`。CLI 账号、配置和缓存保存在 `~/.leetcode-study-plan/`，默认解题目录为 `~/.leetcode-study-plan-solutions/`。可以与原版插件同时安装，设置、凭据和缓存分别保存。支持网页授权及 Cookie 登录。
+扩展 ID 为 `Mafty43211.vscode-leetcode-study-plan`，命令与设置使用 `leetcodeStudyPlan.*`。CLI 账号、配置和缓存保存在 `~/.leetcode-study-plan/`，默认解题目录为 `~/.leetcode-study-plan-solutions/`。可以与原版插件同时安装，设置、凭据和缓存分别保存。支持网页授权及 Cookie 登录。
 
 ## 开发与使用限制
 

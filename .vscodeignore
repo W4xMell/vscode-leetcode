@@ -18,3 +18,8 @@ out/examples/**
 
 # Source installation helper is not part of the extension runtime
 scripts/install-extension.js
+scripts/release-info.js
+scripts/publish-extension.js
+release-metadata.json
+release-notes.md
+SHA256SUMS
