@@ -31,8 +31,10 @@ import * as list from "./list";
 import { getLeetCodeEndpoint } from "./plugin";
 import { globalState } from "../globalState";
 
-export async function previewProblem(input: IProblem | vscode.Uri, isSideMode: boolean = false): Promise<void> {
+export async function previewProblem(input?: IProblem | vscode.Uri, isSideMode: boolean = false): Promise<void> {
     let node: IProblem;
+    input = input || vscode.window.activeTextEditor?.document.uri;
+    if (!input) { await vscode.window.showErrorMessage("Open a LeetCode solution file first."); return; }
 
     if (input instanceof vscode.Uri) {
         const activeFilePath: string = input.fsPath;
@@ -41,7 +43,7 @@ export async function previewProblem(input: IProblem | vscode.Uri, isSideMode: b
             vscode.window.showErrorMessage(`Failed to resolve the problem id from file: ${activeFilePath}.`);
             return;
         }
-        const cachedNode: IProblem | undefined = explorerNodeManager.getNodeById(id);
+        const cachedNode: IProblem | undefined = explorerNodeManager.getNodeById(id) || (await list.listProblems()).find((problem) => problem.id === id);
         if (!cachedNode) {
             vscode.window.showErrorMessage(`Failed to resolve the problem with id: ${id}.`);
             return;
@@ -99,7 +101,7 @@ export async function showSolution(input: LeetCodeNode | vscode.Uri): Promise<vo
         problemInput = input.id;
     } else if (input instanceof vscode.Uri) {
         // Triggerred from Code Lens/context menu
-        problemInput = `"${input.fsPath}"`;
+        problemInput = input.fsPath;
     } else if (!input) {
         // Triggerred from command
         problemInput = await getActiveFilePath();

@@ -23,13 +23,13 @@ export function genFileName(node: IProblem, language: string): string {
 export async function getNodeIdFromFile(fsPath: string): Promise<string> {
     const fileContent: string = await fse.readFile(fsPath, "utf8");
     let id: string = "";
-    const matchResults: RegExpMatchArray | null = fileContent.match(/@lc.+id=(.+?) /);
+    const matchResults: RegExpMatchArray | null = fileContent.match(/@lc\s+app=\S+\s+id=(.*?)\s+lang=\S+/);
     if (matchResults && matchResults.length === 2) {
         id = matchResults[1];
     }
     // Try to get id from file name if getting from comments failed
     if (!id) {
-        id = path.basename(fsPath).split(".")[0];
+        id = path.basename(fsPath).match(/^((?:LCP|LCR|LCS|面试题|Interview)\s+\d+(?:\.\d+)?)(?:\.|$)/i)?.[1] || path.basename(fsPath).split(".")[0];
     }
 
     return id;

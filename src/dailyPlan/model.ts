@@ -7,7 +7,7 @@ export interface IPlanProblem {
     order: number;
     title: string;
     kind: "leetcode" | "custom";
-    leetcodeId?: number | null;
+    leetcodeId?: number | string | null;
     difficulty?: string;
     paidOnly?: boolean;
     previousDays?: number[];
@@ -45,7 +45,7 @@ export function validatePlan(plan: IDailyPlan): IDailyPlan {
             orders.add(problem.order);
             validateSource(problem.sourceUrl);
             if (problem.kind === "leetcode") {
-                if (!Number.isInteger(problem.leetcodeId) || problem.leetcodeId! < 1 || ["Easy", "Medium", "Hard", "简单", "中等", "困难"].indexOf(problem.difficulty || "") < 0) {
+                if (!validProblemId(problem.leetcodeId) || ["Easy", "Medium", "Hard", "简单", "中等", "困难"].indexOf(problem.difficulty || "") < 0) {
                     throw new Error(`Invalid LeetCode ID or difficulty in Day ${day.day}.`);
                 }
             } else if (problem.kind !== "custom" || typeof problem.solutionPath !== "string") {
@@ -107,4 +107,8 @@ export function toLeetCodeProblem(problem: IPlanProblem): IProblem {
         tags: [],
         companies: [],
     };
+}
+
+function validProblemId(id: number | string | null | undefined): boolean {
+    return typeof id === "number" ? Number.isInteger(id) && id > 0 : typeof id === "string" && /^(?:[1-9]\d*|(?:LCP|LCR|LCS|面试题|Interview)\s+\d+(?:\.\d+)?)$/.test(id);
 }

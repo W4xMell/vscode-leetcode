@@ -30,6 +30,7 @@ class LeetCodeManager extends EventEmitter {
 
     public async getLoginStatus(): Promise<void> {
         try {
+            if (!globalState.getCookie()) throw new Error("No extension session.");
             const result: string = await leetCodeExecutor.getUserInfo();
             this.currentUser = this.tryParseUserName(result);
             this.userStatus = UserStatus.SignedIn;
@@ -43,15 +44,24 @@ class LeetCodeManager extends EventEmitter {
     }
 
     private async updateUserStatusWithCookie(cookie: string): Promise<void> {
-        globalState.setCookie(cookie);
-        const data = await queryUserData();
-        globalState.setUserStatus(data);
-        await this.setCookieToCli(cookie, data.username);
-        if (data.username) {
-            vscode.window.showInformationMessage(`Successfully ${data.username}.`);
+        this.currentUser = undefined;
+        this.userStatus = UserStatus.SignedOut;
+        globalState.removeAll();
+        this.emit("statusChanged");
+        try {
+            await globalState.setCookie(cookie);
+            const data = await queryUserData();
+            if (!data.isSignedIn || !data.username) throw new Error("Invalid or expired session.");
+            await this.setCookieToCli(cookie, data.username);
+            await globalState.setUserStatus(data);
             this.currentUser = data.username;
             this.userStatus = UserStatus.SignedIn;
             this.emit("statusChanged");
+            vscode.window.showInformationMessage(`Successfully signed in as ${data.username}.`);
+        } catch (error) {
+            globalState.removeAll();
+            this.emit("statusChanged");
+            throw error;
         }
     }
 
@@ -83,7 +93,7 @@ class LeetCodeManager extends EventEmitter {
                 s ? undefined : 'Cookie must not be empty',
         })
 
-        await this.updateUserStatusWithCookie(cookie || '')
+        if (cookie) await this.updateUserStatusWithCookie(cookie)
     }
 
     public async signIn(): Promise<void> {
@@ -126,12 +136,13 @@ class LeetCodeManager extends EventEmitter {
         try {
             await leetCodeExecutor.signOut();
             vscode.window.showInformationMessage("Successfully signed out.");
+        } catch (error) {
+            // Local credentials must be cleared even if the CLI cannot log out.
+        } finally {
             this.currentUser = undefined;
             this.userStatus = UserStatus.SignedOut;
             globalState.removeAll();
             this.emit("statusChanged");
-        } catch (error) {
-            // swallow the error when sign out.
         }
     }
 
@@ -168,11 +179,11 @@ class LeetCodeManager extends EventEmitter {
             const leetCodeBinaryPath: string = await leetCodeExecutor.getLeetCodeBinaryPath();
 
             const childProc: cp.ChildProcess = wsl.useWsl()
-                ? cp.spawn("wsl", [leetCodeExecutor.node, leetCodeBinaryPath, "user", loginArgsMapping.get("Cookie") ?? ""], {
-                      shell: true,
+                ? cp.spawn("wsl", ["--exec", leetCodeExecutor.node, leetCodeBinaryPath, "user", loginArgsMapping.get("Cookie") ?? ""], {
+                      shell: false,
                   })
                 : cp.spawn(leetCodeExecutor.node, [leetCodeBinaryPath, "user", loginArgsMapping.get("Cookie") ?? ""], {
-                      shell: true,
+                      shell: false,
                       env: createEnvOption(),
                   });
 
@@ -196,6 +207,7 @@ class LeetCodeManager extends EventEmitter {
             childProc.stderr?.on("data", (data: string | Buffer) => leetCodeChannel.append(data.toString()));
 
             childProc.on("error", reject);
+            childProc.on("close", () => reject(new Error("CLI exited before confirming sign-in.")));
         });
     }
 }

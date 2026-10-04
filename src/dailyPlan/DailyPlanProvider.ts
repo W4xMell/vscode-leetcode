@@ -3,9 +3,12 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as vscode from "vscode";
+import { TimerController } from "../timer/TimerController";
+import { IPracticeGroup } from "../timer/model";
 import * as show from "../commands/show";
 import { explorerNodeManager } from "../explorer/explorerNodeManager";
 import { LeetCodeNode } from "../explorer/LeetCodeNode";
+import { RefreshQueue } from "../utils/RefreshQueue";
 import { parseProgress, IPlanDay, IPlanProblem, practiceKey, IProgressEntry, toLeetCodeProblem, validatePlan, workspacePath } from "./model";
 
 export interface IDayElement { type: "day"; day: IPlanDay; problems: IProblemElement[]; }
@@ -52,6 +55,13 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
     }
 
     public getChildren(element?: PlanElement): PlanElement[] { return !element ? this.days : element.type === "day" ? element.problems : []; }
+    public async refreshProgress(): Promise<void> {
+        if (!this.root) return;
+        const filename = path.join(this.root, "PLAN.md");
+        const progress = await fs.pathExists(filename) ? parseProgress((await vscode.workspace.openTextDocument(vscode.Uri.file(filename))).getText()) : new Map<string, IProgressEntry>();
+        this.progress = progress;
+        this.changed.fire(undefined);
+    }
     public getParent(element: PlanElement): PlanElement | undefined { return element.type === "problem" ? this.days.find((node) => node.day === element.day) : undefined; }
 
     public getTreeItem(element: PlanElement): vscode.TreeItem {
@@ -87,33 +97,62 @@ export function resolveProblem(problem: IPlanProblem): LeetCodeNode {
     return explorerNodeManager.getNodeById(String(problem.leetcodeId)) || new LeetCodeNode(toLeetCodeProblem(problem));
 }
 
-export function initializeDailyPlan(context: vscode.ExtensionContext): { provider: DailyPlanProvider; ready: Promise<void>; refresh: () => Promise<void> } {
+export function initializeDailyPlan(context: vscode.ExtensionContext, timers?: TimerController, ensureRemote: () => Promise<void> = async () => undefined): { provider: DailyPlanProvider; ready: Promise<void>; refresh: () => Promise<void> } {
     const provider = new DailyPlanProvider();
     provider.preferredRoot = context.workspaceState.get<string>("dailyPlan.root");
     const view = vscode.window.createTreeView("leetCodeStudyPlanDailyPlan", { treeDataProvider: provider, showCollapseAll: true });
-    let pendingRefresh = Promise.resolve();
-    const refresh = (): Promise<void> => {
-        pendingRefresh = pendingRefresh.catch(() => undefined).then(() => provider.refresh()).then(() => {
-            view.message = undefined;
-        }, (error) => {
-            view.message = `Failed to load study plan: ${error.message}`;
+    let debounce: NodeJS.Timeout | undefined;
+    let scheduled = 0;
+    let disposed = false;
+    let failurePriority = 0;
+    const queue = new RefreshQueue(async (priority) => {
+        if (disposed) return;
+        try {
+            if (priority === 2) {
+                await provider.refresh();
+                timers?.updateGroupSources("day:", provider.getChildren().map((element) => group(element.day)));
+            } else await provider.refreshProgress();
+            if (priority >= failurePriority) { view.message = undefined; failurePriority = 0; }
+        } catch (error) {
+            if (priority >= failurePriority) {
+                view.message = `Failed to load study plan: ${error.message}`;
+                failurePriority = priority;
+            }
             throw error;
-        });
-        return pendingRefresh;
+        }
+    });
+    const requestRefresh = (priority: number): Promise<void> => {
+        if (debounce) clearTimeout(debounce);
+        debounce = undefined;
+        const requested = Math.max(priority, scheduled);
+        scheduled = 0;
+        return queue.request(requested);
     };
-    const backgroundRefresh = (): void => { refresh().catch(() => undefined); };
+    const refresh = (): Promise<void> => requestRefresh(2);
+    const backgroundRefresh = (priority: number = 2): void => {
+        if (disposed) return;
+        scheduled = Math.max(scheduled, priority);
+        if (debounce) clearTimeout(debounce);
+        debounce = setTimeout(() => { requestRefresh(scheduled).catch(() => undefined); }, 150);
+    };
     const guarded = (handler: (element?: PlanElement) => Promise<any>) => async (element?: PlanElement): Promise<void> => {
         try { await handler(element); } catch (error) { await vscode.window.showErrorMessage(`Study Plan: ${error.message}`); }
     };
+    const group = (day: IPlanDay): IPracticeGroup => ({
+        key: `day:${provider.root}:${vscode.workspace.getConfiguration("leetcodeStudyPlan", provider.root ? vscode.Uri.file(provider.root) : undefined).get<string>("dailyPlan.path", "data/custom-plan.json")}:${day.day}`,
+        title: day.title,
+        members: day.problems.map((problem) => ({ key: String(problem.order), id: problem.kind === "custom" ? `local:${problem.solutionPath}` : String(problem.leetcodeId), title: problem.title, localPath: problem.kind === "custom" && provider.root ? workspacePath(provider.root, problem.solutionPath!) : undefined }))
+    });
     const openProblem = async (element: PlanElement | undefined, codeNow: boolean): Promise<void> => {
         if (!element || element.type !== "problem" || !provider.root) return;
+        timers?.select(group(element.day), String(element.problem.order));
         if (element.problem.kind === "custom") {
             const filename = workspacePath(provider.root, element.problem.solutionPath!);
             await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(filename)), { preview: false });
-        } else if (codeNow) {
-            await show.showProblem(resolveProblem(element.problem));
         } else {
-            await show.previewProblem(resolveProblem(element.problem));
+            await ensureRemote();
+            if (codeNow) await show.showProblem(resolveProblem(element.problem));
+            else await show.previewProblem(resolveProblem(element.problem));
         }
     };
     const toggleDone = async (element?: PlanElement): Promise<void> => {
@@ -124,7 +163,7 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
         const edit = new vscode.WorkspaceEdit();
         edit.replace(document.uri, new vscode.Range(document.positionAt(entry.offset), document.positionAt(entry.offset + 1)), entry.done ? " " : "x");
         if (!await vscode.workspace.applyEdit(edit) || !await document.save()) throw new Error("Could not save completion. Check PLAN.md.");
-        await refresh();
+        await requestRefresh(1);
     };
     const openSource = async (element?: PlanElement): Promise<void> => {
         if (!element) return;
@@ -162,12 +201,18 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
             } catch { /* 路径错误由 refresh 显示，不影响原插件激活。 */ }
         }
         for (const watcher of watchers) {
-            watcher.onDidChange(backgroundRefresh);
-            watcher.onDidCreate(backgroundRefresh);
-            watcher.onDidDelete(backgroundRefresh);
+            const changed = (uri: vscode.Uri): void => {
+                if (path.basename(uri.fsPath) === "PLAN.md") {
+                    if (provider.root && uri.fsPath === path.join(provider.root, "PLAN.md")) backgroundRefresh(1);
+                } else backgroundRefresh();
+            };
+            watcher.onDidChange(changed);
+            watcher.onDidCreate(changed);
+            watcher.onDidDelete(changed);
         }
     };
     context.subscriptions.push(provider, view,
+        vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.startGroupTimer", guarded(async (element) => { if (element) await timers?.startGroup(group(element.day)); })),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.refresh", guarded(refresh)),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.preview", guarded((element) => openProblem(element, false))),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.codeNow", guarded((element) => openProblem(element, true))),
@@ -179,9 +224,9 @@ export function initializeDailyPlan(context: vscode.ExtensionContext): { provide
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration("leetcodeStudyPlan.dailyPlan.path")) { updateWatchers(); backgroundRefresh(); }
         }),
-        vscode.workspace.onDidChangeTextDocument((event) => { if (provider.root && event.document.uri.fsPath === path.join(provider.root, "PLAN.md")) backgroundRefresh(); })
+        vscode.workspace.onDidChangeTextDocument((event) => { if (provider.root && event.document.uri.fsPath === path.join(provider.root, "PLAN.md")) backgroundRefresh(1); })
     );
-    context.subscriptions.push({ dispose: () => { for (const watcher of watchers) watcher.dispose(); } });
+    context.subscriptions.push({ dispose: () => { disposed = true; if (debounce) clearTimeout(debounce); for (const watcher of watchers) watcher.dispose(); } });
     updateWatchers();
     const ready = refresh();
     ready.catch(() => undefined);

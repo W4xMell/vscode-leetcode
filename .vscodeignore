@@ -15,3 +15,6 @@ docs
 
 examples/**
 out/examples/**
+
+# Source installation helper is not part of the extension runtime
+scripts/install-extension.js

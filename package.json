@@ -2,7 +2,7 @@
     "name": "vscode-leetcode-study-plan",
     "displayName": "LeetCode Study Plan",
     "description": "Solve LeetCode problems in VS Code with workspace-defined custom study plans.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "author": "W4xMell",
     "publisher": "W4xMell",
     "license": "MIT",
@@ -44,7 +44,30 @@
         "onView:leetCodeStudyPlanExplorer",
         "workspaceContains:data/notion-plan.json",
         "onView:leetCodeStudyPlanDailyPlan",
-        "workspaceContains:data/custom-plan.json"
+        "workspaceContains:data/custom-plan.json",
+        "onCommand:leetcodeStudyPlan.deleteCache",
+        "onCommand:leetcodeStudyPlan.showSolution",
+        "onCommand:leetcodeStudyPlan.addFavorite",
+        "onCommand:leetcodeStudyPlan.removeFavorite",
+        "onCommand:leetcodeStudyPlan.dailyPlan.refresh",
+        "onCommand:leetcodeStudyPlan.dailyPlan.preview",
+        "onCommand:leetcodeStudyPlan.dailyPlan.codeNow",
+        "onCommand:leetcodeStudyPlan.dailyPlan.openSource",
+        "onCommand:leetcodeStudyPlan.dailyPlan.toggleDone",
+        "onCommand:leetcodeStudyPlan.dailyPlan.selectPlan",
+        "onCommand:leetcodeStudyPlan.openCurrentDescription",
+        "onCommand:leetcodeStudyPlan.personalLists.add",
+        "onCommand:leetcodeStudyPlan.personalLists.refresh",
+        "onCommand:leetcodeStudyPlan.personalLists.hideHint",
+        "onCommand:leetcodeStudyPlan.personalLists.remove",
+        "onCommand:leetcodeStudyPlan.personalLists.preview",
+        "onCommand:leetcodeStudyPlan.personalLists.codeNow",
+        "onCommand:leetcodeStudyPlan.personalLists.toggleDone",
+        "onCommand:leetcodeStudyPlan.personalLists.startGroupTimer",
+        "onCommand:leetcodeStudyPlan.dailyPlan.startGroupTimer",
+        "onCommand:leetcodeStudyPlan.timer.problem",
+        "onCommand:leetcodeStudyPlan.timer.group",
+        "onView:leetCodeStudyPlanPersonalLists"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -181,6 +204,78 @@
                 "title": "Select Study Plan JSON",
                 "category": "LeetCode Study Plan",
                 "icon": "$(folder-opened)"
+            },
+            {
+                "command": "leetcodeStudyPlan.openCurrentDescription",
+                "title": "Open Current Problem Description",
+                "category": "LeetCode Study Plan",
+                "icon": "$(book)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.add",
+                "title": "Add Personal LeetCode List",
+                "category": "LeetCode Study Plan",
+                "icon": "$(add)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.refresh",
+                "title": "Refresh Personal Lists",
+                "category": "LeetCode Study Plan",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.remove",
+                "title": "Remove Local List Subscription",
+                "category": "LeetCode Study Plan",
+                "icon": "$(close)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.hideHint",
+                "title": "Hide Personal Lists Hint",
+                "category": "LeetCode Study Plan",
+                "icon": "$(close)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.preview",
+                "title": "Preview List Problem",
+                "category": "LeetCode Study Plan",
+                "icon": "$(preview)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.codeNow",
+                "title": "Code Now",
+                "category": "LeetCode Study Plan",
+                "icon": "$(code)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.toggleDone",
+                "title": "Toggle Practice Completion",
+                "category": "LeetCode Study Plan",
+                "icon": "$(check)"
+            },
+            {
+                "command": "leetcodeStudyPlan.personalLists.startGroupTimer",
+                "title": "Start List Group Timer",
+                "category": "LeetCode Study Plan",
+                "icon": "$(watch)"
+            },
+            {
+                "command": "leetcodeStudyPlan.dailyPlan.startGroupTimer",
+                "title": "Start Day Group Timer",
+                "category": "LeetCode Study Plan",
+                "icon": "$(watch)"
+            },
+            {
+                "command": "leetcodeStudyPlan.timer.problem",
+                "title": "Manage Problem Timer",
+                "category": "LeetCode Study Plan",
+                "icon": "$(watch)"
+            },
+            {
+                "command": "leetcodeStudyPlan.timer.group",
+                "title": "Manage Group Timer",
+                "category": "LeetCode Study Plan",
+                "icon": "$(watch)"
             }
         ],
         "viewsContainers": {
@@ -201,6 +296,10 @@
                 {
                     "id": "leetCodeStudyPlanDailyPlan",
                     "name": "Study Plans"
+                },
+                {
+                    "id": "leetCodeStudyPlanPersonalLists",
+                    "name": "Personal LeetCode Lists"
                 }
             ]
         },
@@ -250,6 +349,21 @@
                     "command": "leetcodeStudyPlan.dailyPlan.selectPlan",
                     "when": "view == leetCodeStudyPlanDailyPlan",
                     "group": "navigation@1"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.add",
+                    "when": "view == leetCodeStudyPlanPersonalLists",
+                    "group": "navigation"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.refresh",
+                    "when": "view == leetCodeStudyPlanPersonalLists",
+                    "group": "navigation"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.hideHint",
+                    "when": "view == leetCodeStudyPlanPersonalLists && leetcodeStudyPlan.personalLists.hintVisible",
+                    "group": "navigation@3"
                 }
             ],
             "view/item/context": [
@@ -302,9 +416,43 @@
                     "command": "leetcodeStudyPlan.dailyPlan.openSource",
                     "when": "view == leetCodeStudyPlanDailyPlan",
                     "group": "source@1"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.refresh",
+                    "when": "view == leetCodeStudyPlanPersonalLists && viewItem == personalList",
+                    "group": "practice"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.remove",
+                    "when": "view == leetCodeStudyPlanPersonalLists && viewItem == personalList",
+                    "group": "practice"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.startGroupTimer",
+                    "when": "view == leetCodeStudyPlanPersonalLists && viewItem == personalList",
+                    "group": "practice"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.codeNow",
+                    "when": "view == leetCodeStudyPlanPersonalLists && viewItem == personalListProblem",
+                    "group": "practice"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.toggleDone",
+                    "when": "view == leetCodeStudyPlanPersonalLists && viewItem == personalListProblem",
+                    "group": "practice"
+                },
+                {
+                    "command": "leetcodeStudyPlan.dailyPlan.startGroupTimer",
+                    "when": "view == leetCodeStudyPlanDailyPlan && viewItem == dailyPlanDay",
+                    "group": "practice"
                 }
             ],
             "commandPalette": [
+                {
+                    "command": "leetcodeStudyPlan.personalLists.hideHint",
+                    "when": "false"
+                },
                 {
                     "command": "leetcodeStudyPlan.showProblem",
                     "when": "never"
@@ -339,6 +487,30 @@
                 },
                 {
                     "command": "leetcodeStudyPlan.dailyPlan.openSource",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.remove",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.preview",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.codeNow",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.toggleDone",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.personalLists.startGroupTimer",
+                    "when": "false"
+                },
+                {
+                    "command": "leetcodeStudyPlan.dailyPlan.startGroupTimer",
                     "when": "false"
                 }
             ],
@@ -375,6 +547,13 @@
                 {
                     "command": "leetcodeStudyPlan.previewProblem",
                     "group": "leetcode@4"
+                }
+            ],
+            "editor/title": [
+                {
+                    "command": "leetcodeStudyPlan.openCurrentDescription",
+                    "when": "resourceScheme == file",
+                    "group": "navigation"
                 }
             ]
         },
@@ -744,7 +923,8 @@
                         "type": "array",
                         "default": [
                             "submit",
-                            "test"
+                            "test",
+                            "description"
                         ],
                         "scope": "application",
                         "items": {
@@ -806,6 +986,22 @@
                         "default": "data/custom-plan.json",
                         "scope": "resource",
                         "description": "Workspace-relative study plan JSON path. Falls back to data/notion-plan.json when the default file is missing."
+                    },
+                    "leetcodeStudyPlan.timer.problemMinutes": {
+                        "type": "number",
+                        "default": 30,
+                        "minimum": 0.01,
+                        "maximum": 10080,
+                        "scope": "window",
+                        "description": "Default problem timer allowance in minutes. You can change it when starting."
+                    },
+                    "leetcodeStudyPlan.timer.groupMinutes": {
+                        "type": "number",
+                        "default": 120,
+                        "minimum": 0.01,
+                        "maximum": 10080,
+                        "scope": "window",
+                        "description": "Default group timer allowance in minutes. You can change it when starting."
                     }
                 }
             }
@@ -827,7 +1023,9 @@
         "test:daily-plan": "node --test test/daily-plan.test.js",
         "test": "npm run compile && node --test test/*.test.js",
         "test:host": "npm run compile && node test/run-host.js",
-        "test:identity": "node --test test/identity.test.js"
+        "test:identity": "node --test test/identity.test.js",
+        "install:extension": "npm run build && node scripts/install-extension.js",
+        "test:installer": "node --test test/installer.test.js"
     },
     "devDependencies": {
         "@types/fs-extra": "^9.0.11",
@@ -837,6 +1035,7 @@
         "@types/node": "^14.14.33",
         "@types/require-from-string": "^1.2.0",
         "@types/vscode": "1.57.0",
+        "cross-spawn": "7.0.6",
         "tslint": "^5.20.1",
         "typescript": "^4.3.2"
     },

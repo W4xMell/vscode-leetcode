@@ -32,7 +32,7 @@ const result = spawnSync(process.env.VSCODE_EXECUTABLE || (process.platform === 
   '--extensionDevelopmentPath=' + path.join(__dirname, 'host'),
   '--extensionTestsPath=' + path.join(__dirname, 'host/run.js'),
   '--disable-workspace-trust', '--skip-welcome', '--skip-release-notes', workspace
-], { stdio: 'inherit', shell: process.platform === 'win32' });
+], { stdio: 'inherit', timeout: 120000, shell: process.platform === 'win32' });
 if (result.error) throw result.error;
 if (result.status !== 0) process.exit(result.status || 1);
 async function report() {
@@ -43,6 +43,7 @@ async function report() {
   }
   if (!fs.existsSync(filename)) throw new Error('Extension host did not produce test results. Inspect logs in ' + profile);
   const summary = JSON.parse(fs.readFileSync(filename, 'utf8'));
+  if(summary.error) throw new Error(summary.error);
   console.log(JSON.stringify(summary, null, 2));
   console.log('Test workspace: ' + workspace);
 }

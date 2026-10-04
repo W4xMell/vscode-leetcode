@@ -6,9 +6,7 @@
     "vscode": "^1.57.0"
   },
   "main": "./extension.js",
-  "activationEvents": [
-    "*"
-  ],
+  "activationEvents": [],
   "contributes": {
     "views": {
       "explorer": [
@@ -23,6 +21,10 @@
         {
           "id": "leetCodeExplorer",
           "name": "Upstream problems fixture"
+        },
+        {
+          "id": "leetCodeStudyPlanPersonalLists",
+          "name": "Personal lists test"
         }
       ]
     },

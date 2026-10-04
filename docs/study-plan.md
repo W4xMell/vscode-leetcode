@@ -1,8 +1,8 @@
 # Study plan format and development
 
-[Back to README](../README.md)
+[README](../README.md) · [Chinese README](../README.zh-CN.md) · [Changelog](../CHANGELOG.md)
 
-## Workspace layout
+## Workspace plan format
 
 ```text
 practice-workspace/
@@ -12,87 +12,133 @@ practice-workspace/
   solutions/
 ```
 
-The default plan is `data/custom-plan.json`. When that default file is missing, `data/notion-plan.json` is supported for existing imported plans. Set `leetcodeStudyPlan.dailyPlan.path` or use **Select Study Plan JSON** to choose another workspace-relative path. In a multi-root workspace, the first matching folder is used unless a folder has been selected through the plan picker.
+The extension reads `data/custom-plan.json` by default. If that default file is missing, it falls back to `data/notion-plan.json`. Set `leetcodeStudyPlan.dailyPlan.path` or use **Select Study Plan JSON** to choose a workspace-relative file. A multi-root workspace uses the first matching folder, with a folder selected through the picker taking precedence.
 
-## JSON fields
+The root object contains a `days` array. Each Day represents an ordered group of practice entries:
 
-The root object contains a `days` array. Each group contains:
-
-| Field | Required | Meaning |
+| Field | Type | Requirement |
 | --- | --- | --- |
-| `day` | Yes | Unique positive integer identifying the group |
-| `title` | Yes | Display title for a day, topic, or review stage |
-| `problems` | Yes | Ordered array of practice entries |
-| `sourceUrl` | No | HTTPS source link for the group |
-| `algorithmSourceUrl` | No | HTTPS explanation link for its problems |
+| `day` | Integer | Positive and unique across groups |
+| `title` | String | Required display title |
+| `problems` | Array | Required ordered entries |
+| `sourceUrl` | String | Optional HTTPS source |
+| `algorithmSourceUrl` | String | Optional HTTPS explanation |
 
-Every problem has a unique positive `order` within the group, a `title`, and a `kind`:
+Each practice entry uses the following fields:
 
-- `leetcode`: requires a positive integer `leetcodeId` and `difficulty` (`Easy`, `Medium`, or `Hard`). Legacy Chinese difficulty labels from imported snapshots are also accepted.
-- `custom`: requires `solutionPath`, pointing to an existing local exercise template inside the workspace. It does not use the LeetCode template or submission flow.
+| Field | Type | Requirement |
+| --- | --- | --- |
+| `order` | Integer | Positive and unique within its group |
+| `title` | String | Required display title |
+| `kind` | String | `leetcode` or `custom` |
+| `leetcodeId` | Integer or string | Required for `leetcode`; positive numeric ID or a supported display ID such as `LCP 01`, `LCR 001`, or `Interview 01.01` |
+| `difficulty` | String | Required for `leetcode`; `Easy`, `Medium`, or `Hard`; imported Chinese labels are accepted |
+| `solutionPath` | String | Required for `custom`; relative path to an existing workspace template |
+| `paidOnly` | Boolean | Optional Premium marker |
+| `previousDays` | Integer array | Optional review group references |
+| `note` | String | Optional practice annotation |
+| `sourceUrl` | String | Optional HTTPS source |
 
-Optional fields include `paidOnly`, `previousDays`, `note`, and a per-problem HTTPS `sourceUrl`. Source links are optional. A problem's own link takes precedence over the group's explanation or source link.
+The problem's own source link takes precedence over its group's explanation link and source link. Paths must remain inside the workspace. Local exercises open their existing templates and do not use LeetCode template generation or submission.
 
 ```json
 {
   "days": [
     {
       "day": 1,
-      "title": "Arrays and Local Practice",
+      "title": "Arrays and local practice",
       "problems": [
         { "order": 1, "title": "Two Sum", "kind": "leetcode", "leetcodeId": 1, "difficulty": "Easy" },
-        { "order": 2, "title": "Remove Duplicates", "kind": "custom", "solutionPath": "practice/unique.ts" }
+        { "order": 2, "title": "Remove duplicates", "kind": "custom", "solutionPath": "practice/unique.ts" }
       ]
     }
   ]
 }
 ```
 
-Invalid JSON or invalid entries do not replace the last successfully loaded view. The view displays the loading error and can recover when the file is corrected.
+See [examples/custom-plan](../examples/custom-plan) for a complete workspace. Invalid plan updates leave the last successfully loaded view intact and display an error until recovery.
 
 ## Progress format
 
-The workspace root `PLAN.md` identifies practices using a `## Day N` heading and numbered checkboxes:
+Create `PLAN.md` in the workspace root. A `## Day N` heading and numbered checkbox identify each practice occurrence:
 
 ```markdown
 ## Day 1 - Arrays
 
 - [ ] 1. Two Sum
-- [x] 2. Remove Duplicates
+- [x] 2. Remove duplicates
 ```
 
-Completion updates replace only the checkbox character. CRLF files and unsaved editor changes are supported. Repeated problems use separate group/order keys. If the progress file or an entry is missing, problem browsing and Code Now remain available, but completion cannot be updated until the entry is created.
+Completion is keyed by `(day, order)`. Repeated LeetCode IDs may share a solution file while keeping separate completion records. Toggling completion changes only the checkbox character; CRLF and unsaved editor changes are supported. Missing progress entries do not prevent browsing or Code Now, but must be created before completion can be updated.
 
-## Extension isolation
+`PLAN.md` changes are debounced for 150 ms and update progress without rebuilding JSON groups or timer sources. Plan/configuration/workspace changes refresh the structure. A refresh queue retains one running request and at most one pending request; a structural refresh subsumes a progress-only refresh. Invalid progress preserves the previous valid completion state and recovers after correction.
 
-This extension uses `W4xMell.vscode-leetcode-study-plan`, `leetcodeStudyPlan.*` commands/settings, dedicated view IDs, and a separate URI callback. VS Code stores its extension state separately from the upstream extension.
+## State and behavior contracts
 
-`scripts/study-plan-cli.js` wraps the bundled `vsc-leetcode-cli` and redirects its home directory to `~/.leetcode-study-plan/`. This isolates CLI configuration, endpoint selection, account data, and caches without modifying the upstream package or overriding the user's home environment. First-run cleanup applies only to this extension's cache directory.
+A LeetCode problem is identified by its site and display ID. A practice entry is one occurrence of practicing a problem or local exercise. Practice completion is a learner's confirmation, separate from historical accepted submissions.
 
-Sign in through **LeetCode Study Plan: Sign In**. Account sessions from another extension are not imported. The browser authorization callback targets this extension; the cookie login option remains available if web authorization is unavailable.
+Personal-list membership and author order belong to the website. Local subscriptions and manual completion belong to the extension. Catalog queries include only lists created by the signed-in user and exclude smart lists. An incomplete catalog is rejected. Problem pagination must complete successfully before replacing cached data; duplicate, missing, or changing pages retain the last valid list.
 
-The standard `@lc` file metadata and code boundary markers are retained. Both extensions can work with these solution files. This extension labels its CodeLens actions **Study Plan: Test** and **Study Plan: Submit** to distinguish them from upstream actions.
+Personal lists are cached by site/account. Subscriptions, completion records, and timer state are scoped to the workspace. Personal completion keys also include the list slug and stable internal problem ID. Account changes hide the previous account's lists, pause its clocks, and discard its in-flight responses.
 
-## Implementation
+A group session captures membership and order when started. Refreshing a Day or website list changes the source for a new attempt; it never rewrites an existing session. A newly added source member may have a separate problem timer outside that saved group. Resuming/restoring a session preserves its original scope; starting a new attempt uses the latest available source and fails if that source was removed.
 
-- `src/dailyPlan/model.ts`: validation, progress parsing, workspace paths, and native problem parameters.
-- `src/dailyPlan/DailyPlanProvider.ts`: tree view, JSON picker, file watching, native problem opening, and completion updates.
-- `src/extension.ts`: standalone activation and command registration.
-- `scripts/study-plan-cli.js`: isolated CLI state.
-- `examples/custom-plan/`: portable example data for documentation and tests.
+Elapsed time comes from wall-clock samples, independent of heartbeat cadence. Switching problems pauses the previous problem clock; a running group continues. Expiry notifies once and counts overtime. Idle/paused timers have no interval. Running timers checkpoint every second; slow storage keeps only the latest pending write and snapshots when it can write. Reloads restore paused clocks and exclude offline time.
 
-## Build and verify
+## Runtime isolation and initialization
+
+The extension ID is `W4xMell.vscode-leetcode-study-plan`; commands and settings use `leetcodeStudyPlan.*`. Extension state, views, and authorization callbacks are separate from the upstream extension.
+
+`scripts/study-plan-cli.js` wraps `vsc-leetcode-cli` and redirects its data directory to `~/.leetcode-study-plan/`. First-run cleanup affects only that directory. `scripts/cli-compat.js` preserves full display IDs and resolves site-internal IDs for the bundled CLI. Existing `@lc` metadata and code boundary markers remain compatible with standard solution files.
+
+Activation registers local views and commands without checking the CLI environment. First online use initializes requirements, configures the endpoint, and restores login state. Concurrent callers share initialization; failed initialization can be retried. Node path, WSL, and endpoint configuration changes invalidate the result and serialize subsequent initialization. Local plans, local exercise opening, progress updates, timer controls, and hint dismissal do not require online initialization.
+
+## Source map
+
+| Path | Responsibility |
+| --- | --- |
+| `src/dailyPlan/` | Plan validation, progress parsing, tree view, picker, file watching, and local/online opening |
+| `src/personalLists/` | Website GraphQL queries, catalog/pagination validation, caches, subscriptions, and completion |
+| `src/timer/` | Deterministic clock transitions, session snapshots, status bars, and persistence |
+| `src/utils/LazyInitialization.ts` | Shared initialization, retries, and invalidation |
+| `src/utils/RefreshQueue.ts` | Bounded refresh scheduling and priority |
+| `src/extension.ts` | Command registration and runtime lifecycle |
+| `scripts/study-plan-cli.js`, `scripts/cli-compat.js` | Isolated CLI data and display-ID compatibility |
+| `scripts/install-extension.js` | Install the repository's matching VSIX through the VS Code CLI |
+| `examples/custom-plan/` | Portable fixtures for documentation and tests |
+
+## Development and verification
+
+Use Node.js 22. Install dependencies, then run the release checks:
 
 ```sh
 npm ci
 npm test
 npm run lint
 npm run build
+```
+
+`npm test` compiles TypeScript and runs Node tests for format/identity/isolation, credentials, CLI arguments, installer behavior, list pagination, timer transitions, editor changes, refresh coalescing, and lazy initialization. Tests use temporary or mocked boundaries; they do not submit solutions or install into the user's editor.
+
+For native VS Code integration, run:
+
+```sh
 npm run test:host
 ```
 
-Use Node.js 22 for development. Packaging uses the fixed official `@vscode/vsce` 4.0.0 version. `npm run test:host` additionally requires VS Code, the `code` command, and a graphical session. Set `VSCODE_EXECUTABLE` to use a different CLI path.
+Host tests require an installed VS Code CLI and graphical session. Set `VSCODE_EXECUTABLE` to specify the CLI. They create a temporary workspace/profile, stub network/CLI boundaries, and exercise the actual activation, tree views, preview, Code Now, editor focus, CodeLens, completion, plan selection, account isolation, and timer controls.
 
-Host tests create a temporary workspace and VS Code profile. They stub network/CLI boundaries while using the actual activation, views, native preview, Code Now, editor, and CodeLens implementation. They verify command isolation from upstream IDs, progress updates, local exercises, plan selection by configuration, and legacy snapshot fallback. No solution is submitted.
+CI runs tests, lint, and packaging on Linux and Windows; it uploads VSIX artifacts. Packaging uses `@vscode/vsce` 4.0.0. To test changes manually, run `npm run install:extension` and reload VS Code. The installer builds first, uses the manifest's VSIX filename, passes arguments without a shell, and defaults to forced installation. See the [README](../README.md#requirements-and-installation) for CLI/profile options.
 
-CI builds on Linux and Windows, runs compilation/tests/linting, packages a VSIX, and uploads artifacts. A manual workflow dispatch is available for rebuilding the default branch.
+Before submitting, keep English and Chinese READMEs consistent, update the changelog, and verify local Markdown links. Commit source, tests, fixtures, and documentation; dependencies, compiled `out/`, VSIX files, and personal credentials stay out of Git.
+
+## Verification limits
+
+Automated host tests simulate website and CLI responses. Anonymous China-site public list queries have been checked; authenticated own/private lists, global-site equivalents, actual Test/Submit, and Windows/WSL still require live-environment verification. Local progress does not synchronize to Notion or infer completion from account history.
+
+## Next-version TODO
+
+- [ ] Load Markdown rendering and syntax highlighting on demand. Register only the languages actually needed; evaluate bundling the extension-host entry to reduce dependency files. Verify first/repeated previews, highlighting, error recovery, and execution from an installed VSIX.
+- [ ] Reduce hidden Webview memory. Evaluate removing `retainContextWhenHidden: true` and restoring necessary content/scroll state when shown. Verify problem descriptions, solutions, submission results, and editor focus.
+
+Measure cold activation, first/repeated preview cost, and memory with multiple panels visible/hidden. Standalone Node module-loading measurements identify candidates; they are not measurements of VS Code extension-host performance.

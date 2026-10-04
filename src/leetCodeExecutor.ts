@@ -15,6 +15,9 @@ import * as wsl from "./utils/wslUtils";
 import { toWslPath, useWsl } from "./utils/wslUtils";
 
 class LeetCodeExecutor implements Disposable {
+    private prepare: () => Promise<void> = async () => undefined;
+    public setPreparation(prepare: () => Promise<void>): void { this.prepare = prepare; }
+
     private leetCodeRootPath: string;
     private nodeExecutable: string;
     private configurationChangeListener: Disposable;
@@ -23,7 +26,7 @@ class LeetCodeExecutor implements Disposable {
         this.leetCodeRootPath = path.join(__dirname, "..", "..", "node_modules", "vsc-leetcode-cli");
         this.nodeExecutable = this.getNodePath();
         this.configurationChangeListener = workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
-            if (event.affectsConfiguration("leetcodeStudyPlan.nodePath")) {
+            if (event.affectsConfiguration("leetcodeStudyPlan.nodePath") || event.affectsConfiguration("leetcodeStudyPlan.useWsl")) {
                 this.nodeExecutable = this.getNodePath();
             }
         }, this);
@@ -31,12 +34,13 @@ class LeetCodeExecutor implements Disposable {
 
     public async getLeetCodeBinaryPath(): Promise<string> {
         if (wsl.useWsl()) {
-            return `${await wsl.toWslPath(`"${path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js")}"`)}`;
+            return `${await wsl.toWslPath(path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js"))}`;
         }
-        return `"${path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js")}"`;
+        return path.join(__dirname, "..", "..", "scripts", "study-plan-cli.js");
     }
 
     public async meetRequirements(context: ExtensionContext): Promise<boolean> {
+        this.nodeExecutable = this.getNodePath();
         const hasInited: boolean | undefined = context.globalState.get(leetcodeHasInited);
         if (!hasInited) {
             await this.removeOldCache();
@@ -45,14 +49,12 @@ class LeetCodeExecutor implements Disposable {
             if (!await fse.pathExists(this.nodeExecutable)) {
                 throw new Error(`The Node.js executable does not exist on path ${this.nodeExecutable}`);
             }
-            // Wrap the executable with "" to avoid space issue in the path.
-            this.nodeExecutable = `"${this.nodeExecutable}"`;
             if (useWsl()) {
                 this.nodeExecutable = await toWslPath(this.nodeExecutable);
             }
         }
         try {
-            await this.executeCommandEx(this.nodeExecutable, ["-v"]);
+            await this.executeCommandRaw(this.nodeExecutable, ["-v"]);
         } catch (error) {
             const choice: MessageItem | undefined = await window.showErrorMessage(
                 "LeetCode extension needs Node.js installed in environment path",
@@ -65,10 +67,10 @@ class LeetCodeExecutor implements Disposable {
         }
         for (const plugin of supportedPlugins) {
             try { // Check plugin
-                await this.executeCommandEx(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-e", plugin]);
+                await this.executeCommandRaw(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-e", plugin]);
             } catch (error) { // Remove old cache that may cause the error download plugin and activate
                 await this.removeOldCache();
-                await this.executeCommandEx(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-i", plugin]);
+                await this.executeCommandRaw(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-i", plugin]);
             }
         }
         // Set the global state HasInited true to skip delete old cache after init
@@ -164,7 +166,7 @@ class LeetCodeExecutor implements Disposable {
 
     public async submitSolution(filePath: string): Promise<string> {
         try {
-            return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "submit", `"${filePath}"`]);
+            return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "submit", filePath]);
         } catch (error) {
             if (error.result) {
                 return error.result;
@@ -175,18 +177,18 @@ class LeetCodeExecutor implements Disposable {
 
     public async testSolution(filePath: string, testString?: string): Promise<string> {
         if (testString) {
-            return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "test", `"${filePath}"`, "-t", `${testString}`]);
+            return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "test", filePath, "-t", `${testString}`]);
         }
-        return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "test", `"${filePath}"`]);
+        return await this.executeCommandWithProgressEx("Submitting to LeetCode...", this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "test", filePath]);
     }
 
     public async switchEndpoint(endpoint: string): Promise<string> {
         switch (endpoint) {
             case Endpoint.LeetCodeCN:
-                return await this.executeCommandEx(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-e", "leetcode.cn"]);
+                return await this.executeCommandRaw(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-e", "leetcode.cn"]);
             case Endpoint.LeetCode:
             default:
-                return await this.executeCommandEx(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-d", "leetcode.cn"]);
+                return await this.executeCommandRaw(this.nodeExecutable, [await this.getLeetCodeBinaryPath(), "plugin", "-d", "leetcode.cn"]);
         }
     }
 
@@ -222,16 +224,25 @@ class LeetCodeExecutor implements Disposable {
         return extensionConfig.get<string>("nodePath", "node" /* default value */);
     }
 
-    private async executeCommandEx(command: string, args: string[], options: cp.SpawnOptions = { shell: true }): Promise<string> {
+    private async executeCommandEx(command: string, args: string[], options: cp.SpawnOptions = { shell: false }): Promise<string> {
+        const configuredNode = command === this.nodeExecutable;
+        await this.prepare();
+        return this.executeCommandRaw(configuredNode ? this.nodeExecutable : command, args, options);
+    }
+
+    private async executeCommandRaw(command: string, args: string[], options: cp.SpawnOptions = { shell: false }): Promise<string> {
         if (wsl.useWsl()) {
-            return await executeCommand("wsl", [command].concat(args), options);
+            return await executeCommand("wsl", ["--exec", command].concat(args), options);
         }
         return await executeCommand(command, args, options);
     }
 
-    private async executeCommandWithProgressEx(message: string, command: string, args: string[], options: cp.SpawnOptions = { shell: true }): Promise<string> {
+    private async executeCommandWithProgressEx(message: string, command: string, args: string[], options: cp.SpawnOptions = { shell: false }): Promise<string> {
+        const configuredNode = command === this.nodeExecutable;
+        await this.prepare();
+        if (configuredNode) command = this.nodeExecutable;
         if (wsl.useWsl()) {
-            return await executeCommandWithProgress(message, "wsl", [command].concat(args), options);
+            return await executeCommandWithProgress(message, "wsl", ["--exec", command].concat(args), options);
         }
         return await executeCommandWithProgress(message, command, args, options);
     }

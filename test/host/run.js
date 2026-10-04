@@ -7,8 +7,19 @@ const { CustomCodeLensProvider } = require('../../out/src/codelens/CustomCodeLen
 
 async function run() {
   const api=await vscode.extensions.getExtension('local-test.daily-plan-test-host').activate();
+  assert.equal(api.startupRequirementsCalls,0,'activation must not eagerly initialize CLI');
   await api.ready;
+  const personalListsView=api.treeViews.get('leetCodeStudyPlanPersonalLists');
+  assert(personalListsView.message.includes('Add an ordinary list'));
+  await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.hideHint');
+  assert.equal(personalListsView.message,undefined);
+  assert.equal(api.isPersonalListsHintDismissed(),true);
+  await api.setAccount('hint-test');
+  await api.setAccount(undefined);
+  assert.equal(personalListsView.message,undefined,'account changes must not restore a dismissed hint');
+  console.log('PASS personal lists hint dismissal and persistent preference');
   const commands=await vscode.commands.getCommands(true);
+  assert(!commands.includes('leetcodeStudyPlan.personalLists.showHint'),'hint restoration command must not be registered');
   for(const id of ['leetcode.showProblem','leetcodeStudyPlan.showProblem','leetcodeStudyPlan.testSolution','leetcodeStudyPlan.submitSolution']) assert.ok(commands.includes(id),id);
   const days=api.provider.getChildren();
   assert.equal(days.length,2);
@@ -17,7 +28,13 @@ async function run() {
   const root=vscode.workspace.workspaceFolders[0].uri.fsPath;
   const before=await fs.readFile(path.join(root,'PLAN.md'),'utf8');
 
+  const local = api.provider.getChildren(days[0]).find(element=>element.problem.kind==='custom');
+  assert(local);
+  const initialRequirements = api.requirementsCalls();
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.codeNow',local);
+  assert.equal(api.requirementsCalls(),initialRequirements,'local exercises must not initialize CLI');
   await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.preview',first);
+  assert.equal(api.requirementsCalls(),1,'first remote operation initializes CLI once');
   assert(leetCodePreviewProvider.panel,'原插件的预览面板未创建');
   assert(leetCodePreviewProvider.panel.webview.html.includes('Code Now'));
   assert.equal(leetCodePreviewProvider.node.id,'1');
@@ -39,6 +56,7 @@ async function run() {
   assert.equal(api.provider.isDone(first),false);
   assert.equal(await fs.readFile(path.join(root,'PLAN.md'),'utf8'),before);
   console.log('PASS 完成状态保存、每日进度和恢复');
+  assert.equal(api.requirementsCalls(),1,'repeated remote operations share initialized CLI');
 
   const variant=api.provider.getChildren(api.provider.getChildren()[0])[2];
   const count=api.calls.filter(call=>call.kind==='template').length;
@@ -72,7 +90,136 @@ async function run() {
   await api.refresh();
   console.log('PASS 配置切换题单与旧 Notion 快照兼容');
 
-  const summary={days:2,problems:4,nativeCodeNow:true,codeLens:['Study Plan: Submit','Study Plan: Test'],completionRoundTrip:true,customLocal:true,invalidPlanRecovery:true,configuredPlan:true,legacyNotionFallback:true,standaloneActivation:true,upstreamCommandIsolation:true};
+  // Current-file description reuses the panel and preserves the code editor focus.
+  await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.codeNow',first);
+  const panel=leetCodePreviewProvider.panel;
+  const active=vscode.window.activeTextEditor;
+  const {explorerNodeManager}=require('../../out/src/explorer/explorerNodeManager');
+  const originalLookup=explorerNodeManager.getNodeById;
+  explorerNodeManager.getNodeById=id=>({id,name:'Two Sum',difficulty:'Easy',passRate:'',locked:false,state:3,isFavorite:false,tags:[],companies:[]});
+  await vscode.commands.executeCommand('leetcodeStudyPlan.openCurrentDescription');
+  await new Promise(resolve=>setTimeout(resolve,100));
+  assert.equal(leetCodePreviewProvider.panel,panel);
+  assert.equal(panel.viewColumn,vscode.ViewColumn.Two);
+  assert.equal(vscode.window.activeTextEditor,active);
+  explorerNodeManager.getNodeById=originalLookup;
+  console.log('PASS current-file description reuses side panel and preserves focus');
+
+  try {
+    await api.setAccount('alice');
+    api.setPick(true);
+    await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.add');
+    const provider=api.personalLists;
+    let list=provider.getChildren()[0];
+    assert.equal(list.list.problems.length,2);
+    const special=provider.getChildren(list)[0];
+    await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.codeNow',special);
+    assert.equal(vscode.window.activeTextEditor.document.uri.fsPath,path.join(root,'solutions','LCP 01.ts'));
+    assert.equal(api.calls.filter(call=>call.kind==='template').at(-1).id,'LCP 01');
+    const interview=provider.getChildren(list)[1];
+    await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.preview',interview);
+    assert.equal(leetCodePreviewProvider.node.id,'面试题 01.01');
+    await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.codeNow',interview);
+    assert.equal(vscode.window.activeTextEditor.document.uri.fsPath,path.join(root,'solutions','面试题 01.01.ts'));
+    await vscode.commands.executeCommand('leetcodeStudyPlan.personalLists.toggleDone',special);
+    assert.equal(provider.done('mine','100107'),true);
+    const clockGroup=provider.group(list.list);
+    api.timers.model.startGroup(clockGroup,120);
+    api.timers.select(clockGroup,'100107');
+    api.timers.model.startProblem(30);
+    api.setListProblems([...list.list.problems].reverse().map(problem=>({id:Number(problem.internalId),questionFrontendId:problem.id,title:problem.name,titleSlug:problem.slug,difficulty:'EASY',paidOnly:false})));
+    await provider.refresh();
+    list=provider.getChildren()[0];
+    assert.equal(list.list.problems[0].id,'面试题 01.01');
+    assert.equal(provider.done('mine','100107'),true);
+    assert.equal(api.timers.model.groupSession().group.members[0].id,'LCP 01');
+    api.setInput('30');api.setPick('Start selected group');
+    await vscode.commands.executeCommand('leetcodeStudyPlan.timer.group');
+    assert.deepEqual(api.timers.model.groupSession().group.members.map(member=>member.id),['面试题 01.01','LCP 01'], 'status-bar new attempts must use refreshed list order');
+    api.setPick(true);
+    api.setListProblems([...list.list.problems.map(problem=>({id:Number(problem.internalId),questionFrontendId:problem.id,title:problem.name,titleSlug:problem.slug,difficulty:'EASY',paidOnly:false})),
+      {id:1,questionFrontendId:'1',title:'Two Sum',titleSlug:'two-sum',difficulty:'EASY',paidOnly:false}]);
+    await provider.refresh();list=provider.getChildren()[0];
+    const newMember=provider.getChildren(list)[2];
+    await provider.open(newMember);
+    assert.equal(api.timers.model.groupSession().group.members.length,2,'source addition must not alter original session');
+    api.timers.model.startProblem(1);
+    assert(api.timers.model.selectedSession().group.key.startsWith('personal:'));
+    api.setOffline(true);await provider.refresh();
+    list=provider.getChildren()[0];
+    assert.equal(list.list.cached,true);
+    assert.equal(list.list.problems.length,3);
+    assert(provider.getTreeItem(list).description.includes('Cached'));
+    api.setOffline(false);api.holdNextRequest();
+    const inFlight=provider.refresh();
+    await api.setAccount('bob');api.releaseRequest();await inFlight;
+    assert.equal(provider.getChildren().length,0,'old account in-flight response must remain hidden');
+    const outsideSession=Object.values(api.timers.model.state.sessions).find(session=>session.group.key.includes(':outside:'));
+    assert.equal(outsideSession.problems['1'].runningSince,undefined,'new source member timer must pause on account change');
+    assert.equal(api.timers.model.groupSession(),undefined);
+    assert(!api.timers.groupBar.tooltip.includes('My private list'));
+    await api.setAccount('alice');
+    assert.equal(provider.getChildren().length,1);
+    assert.equal(provider.done('mine','100107'),true);
+    await api.setAccount(undefined);
+    assert.equal(provider.getChildren().length,0);
+    const {globalState}=require('../../out/src/globalState');
+    assert.equal(globalState.getCookie(),undefined);
+    assert.equal(globalState.getUserStatus(),undefined);
+    await api.setAccount('alice');
+    await provider.remove(provider.getChildren()[0]);
+    assert.equal(provider.getChildren().length,0);
+    assert.equal(provider.done('mine','100107'),true,'removing subscription preserves history');
+    console.log('PASS personal list order, special Code Now, completion, failure cache, account/logout isolation');
+
+    api.setInput('30');
+    api.setPick('Start');
+    await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.preview',first);
+    await vscode.commands.executeCommand('leetcodeStudyPlan.timer.problem');
+    assert(api.timers.model.problemClock().runningSince !== undefined);
+    assert(api.timers.problemBar.text.includes('30:00'));
+    api.setPick('Pause');
+    await vscode.commands.executeCommand('leetcodeStudyPlan.timer.problem');
+    assert.equal(api.timers.model.problemClock().runningSince,undefined);
+    api.setPick('Resume');
+    await vscode.commands.executeCommand('leetcodeStudyPlan.timer.problem');
+    assert(api.timers.model.problemClock().runningSince !== undefined);
+    await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.startGroupTimer',days[0]);
+    assert.equal(api.timers.model.groupSession().group.members.length,3);
+    assert.equal(api.timers.model.groupSession().clock.allowance,30*60000);
+    await api.timers.flush();
+    console.log('PASS registered timer commands, state bars, pause/resume, Day group snapshot');
+
+    const localPlan=JSON.parse(await fs.readFile(jsonFile,'utf8'));
+    const localPlanBefore=JSON.stringify(localPlan);
+    const secondLocalFile=path.join(root,'practice/second-local.ts');
+    await fs.writeFile(secondLocalFile,'function secondLocalExercise() {}\n');
+    localPlan.days[0].problems.push({order:4,title:'Second local exercise',kind:'custom',solutionPath:'practice/second-local.ts'});
+    await fs.writeFile(jsonFile,JSON.stringify(localPlan));await api.refresh();
+    assert.equal(api.timers.model.groupSession().group.members.length,3,'plan refresh must preserve the current attempt');
+    const updatedDay=api.provider.getChildren()[0];
+    await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.startGroupTimer',updatedDay);
+    const localA=api.provider.getChildren(updatedDay)[2];
+    const localBDocument=await vscode.workspace.openTextDocument(vscode.Uri.file(secondLocalFile));
+    await vscode.commands.executeCommand('leetcodeStudyPlan.dailyPlan.codeNow',localA);
+    api.setPick('Start');await vscode.commands.executeCommand('leetcodeStudyPlan.timer.problem');
+    const localClockA=api.timers.model.problemClock();
+    assert(localClockA.runningSince !== undefined);
+    await vscode.window.showTextDocument(localBDocument,{preview:false});
+    await new Promise(resolve=>setTimeout(resolve,150));
+    assert.equal(api.timers.model.selectedSession().selected,'4');
+    assert.equal(localClockA.runningSince,undefined,'switching local editor tabs must pause the previous problem');
+    assert(api.timers.model.groupSession().clock.runningSince !== undefined,'the group timer must keep running');
+    await fs.writeFile(jsonFile,localPlanBefore);await api.refresh();
+    api.setPick('Start selected group');await vscode.commands.executeCommand('leetcodeStudyPlan.timer.group');
+    assert.equal(api.timers.model.groupSession().group.members.length,3,'status-bar new Day attempts must use current plan membership');
+    console.log('PASS refreshed group sources and local editor tab timer transitions');
+  } finally {api.setPick(undefined);api.setInput(undefined);}
+
+  const summary={days:2,problems:4,nativeCodeNow:true,codeLens:['Study Plan: Submit','Study Plan: Test'],completionRoundTrip:true,customLocal:true,invalidPlanRecovery:true,configuredPlan:true,legacyNotionFallback:true,standaloneActivation:true,currentDescriptionFocus:true,personalListCache:true,accountIsolation:true,specialProblemCodeNow:true,timerCommands:true,currentGroupSources:true,localEditorTimerSwitch:true,upstreamCommandIsolation:true};
   await fs.writeFile(path.join(root,'test-result.json'),JSON.stringify(summary,null,2));
 }
-module.exports={run};
+module.exports={run:async()=>{
+  try {await run();}
+  catch(error) {await fs.writeFile(path.join(vscode.workspace.workspaceFolders[0].uri.fsPath,'test-result.json'),JSON.stringify({error:error.stack || String(error)}));throw error;}
+}};
