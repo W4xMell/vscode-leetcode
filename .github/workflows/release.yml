@@ -114,10 +114,32 @@ jobs:
     needs: [validate, github-release]
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: marketplace
     permissions:
       contents: read
       id-token: write
     steps:
+      - name: Validate authentication configuration
+        uses: actions/github-script@v7
+        env:
+          MARKETPLACE_AUTH: ${{ vars.MARKETPLACE_AUTH }}
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        with:
+          script: |
+            const method = process.env.MARKETPLACE_AUTH || 'pat';
+            if (!['pat', 'azure'].includes(method)) {
+              core.setFailed('MARKETPLACE_AUTH must be pat or azure.');
+              return;
+            }
+            if (method === 'azure') {
+              for (const key of ['AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID']) {
+                if (!/^[0-9a-f-]{36}$/i.test(process.env[key] || '')) {
+                  core.setFailed(`Configure ${key} before enabling Azure publishing.`);
+                }
+              }
+            }
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.validate.outputs.sha }}
@@ -142,6 +164,10 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+      - name: Verify Marketplace authorization
+        if: vars.MARKETPLACE_AUTH == 'azure'
+        run: npx --yes @vscode/vsce@4.0.0 verify-pat Mafty43211 --azure-credential
       - name: Publish with Microsoft Entra ID
         if: vars.MARKETPLACE_AUTH == 'azure'
         run: npm run vs-publish -- --azure-credential

@@ -6,13 +6,13 @@
 
 ## 1. 当前基线
 
-源码已准备 `0.2.1`，默认开发分支为 `master`。Marketplace 已有 `Mafty43211.vscode-leetcode-study-plan` 的 `0.2.0`。
+源码版本为 `0.2.1`，默认开发分支为 `master`。[GitHub Release](https://github.com/W4xMell/vscode-leetcode-study-plan/releases/tag/v0.2.1) 已自动上传；维护者已确认 Marketplace 的 PAT 上传验证成功。
 
 - [现有 CI](../.github/workflows/build.yml) 在推送 `master`、`codex/**`、向 `master` 提交 PR 或手动触发时运行。
 - CI 使用 Node.js 22，在 Linux 和 Windows 上执行 `npm ci`、`npm test`、`npm run lint`、`npm run build`，并上传两个平台的 VSIX 构建产物。
 - `aef5142` 的 [Linux 和 Windows 构建任务](https://github.com/W4xMell/vscode-leetcode-study-plan/actions/runs/37197524432) 均已通过。此结果不替代真实账号、在线判题或 Windows/WSL 功能验收。
 - `npm run test:host` 使用本机 `code` 和图形环境，目前没有 CI 宿主测试任务。
-- GitHub 分支接口显示 `master` 的 `protected` 为 `false`；本次查询没有发现版本标签或 GitHub Release。发布流程实施时还需核对仓库 Rulesets。
+- 2026-10-04 查询时，GitHub 分支接口显示 `master` 的 `protected` 为 `false`；分支和标签保护仍需核对仓库 Rulesets。
 - 仓库采用 TypeScript、TSLint、Node 测试和 `@vscode/vsce` 4.0.0；`npm run vs-publish` 使用固定工具版本，上传当前版本的 VSIX。
 
 ### 自动上传入口
@@ -33,6 +33,30 @@ GitHub Release 使用内置 `GITHUB_TOKEN`。只有 Release 上传任务取得 `
 官方推荐 Entra 联合身份认证；Azure DevOps 全局 PAT 将于 2026-12-01 退役，现有 PAT 仅作为过渡接入。见 [VS Code 发布认证](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) 和 [GitHub OIDC 配置](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-azure)。
 
 宿主 CI、已安装 VSIX 冒烟、分支和标签保护仍在下方 TODO 中。本工作流自动公开通过现有检查的版本，尚未实现后文建议的候选包人工验收门禁。
+
+### Entra ID + 托管身份迁移
+
+使用 GitHub 托管的 `ubuntu-latest` Runner，以 GitHub OIDC 断言换取用户分配托管身份（User-assigned managed identity）的 Entra Token，再通过 `vsce --azure-credential` 上传。`azure/login` 使用默认的 OIDC 登录方式；不要设置 `auth-type: IDENTITY`，该方式依赖 Azure VM 上的自托管 Runner。GitHub 发布继续使用内置 `GITHUB_TOKEN`。
+
+工作流已提供 Azure 分支和[独立认证检查](../.github/workflows/marketplace-auth.yml)。Azure 身份、联合凭据及 Publisher 成员授权需要维护者在自己的订阅和账号中配置，代码提交不代表已经完成迁移。
+
+按以下顺序操作：
+
+1. 在 Azure 公有云订阅中创建用户分配托管身份，例如 `leetcode-marketplace-publisher`。记录 Client ID、Tenant ID、Subscription ID；三者是配置标识，不是 Client Secret。按官方指引授予 Reader，限制到发布身份所在资源组。创建身份和授予角色需要相应 Azure 管理权限。
+2. 在 GitHub Settings → Environments 中创建 `marketplace`，配置允许部署的分支 `master` 和标签 `v*`。`master` 用于手动认证检查和从主线发起的发布请求；标签用于自动发布。Azure 信任绑定到此 Environment；需要在 GitHub 设置允许范围，不能仅依赖 YAML 中的环境名称。
+3. 在 Actions → Marketplace authentication → Run workflow 中选择 `master`、`mode=inspect`。该模式不需要 Azure 凭据，只输出联合绑定信息。在运行 Summary 中取得 `issuer`、`subject` 和 `audiences`，或下载 `marketplace-federated-credential` Artifact 中的 JSON。
+4. 在托管身份的 Federated credentials 中添加凭据。选择可手动填写 issuer/subject 的配置方式，逐字填写 inspect 输出；Audience 是 `api://AzureADTokenExchange`，Issuer 是 `https://token.actions.githubusercontent.com`。不要在 subject 中使用通配符。
+5. 在 GitHub Repository variables 中配置 `AZURE_CLIENT_ID`、`AZURE_TENANT_ID`、`AZURE_SUBSCRIPTION_ID`，值来自第 1 步。暂时保留已有 PAT 发布路径，直到 Azure 验证完成。
+6. 再运行 `mode=verify`。Azure 登录成功后，Summary 会输出 Marketplace profile ID。首次运行可能在 Publisher 权限检查处失败；此时取前一步的 profile ID，在 Marketplace 的 `Mafty43211` Publisher → Members 中添加该身份并授予 Contributor。这里使用 profile 接口返回的 `id`，不是 Azure 资源的 ARM 路径、Client ID 或 Entra Object ID。
+7. 重新运行 `mode=verify`，确认 `vsce verify-pat Mafty43211 --azure-credential` 成功。该命令名称保留了 verify-pat，但实际验证的是 Entra 发布身份；认证检查不上传任何插件。
+8. 在 Repository variables 设置 `MARKETPLACE_AUTH=azure`。后续 Release 会先验证 Azure 登录和 Publisher 权限，再上传已有 VSIX；Azure 失败时停止，不回退到 PAT。下一版本上传验证完成后，在 Azure DevOps 撤销旧 PAT，并从 GitHub 删除 `VSCE_PAT`。
+
+该仓库创建于 2026-10-03。GitHub 对 2026-07-15 之后创建的仓库使用包含 owner/repository ID 的默认 subject。因此这里预计是 `repo:W4xMell@74851426/vscode-leetcode-study-plan@1403414028:environment:marketplace`；配置时以 inspect 的实际输出为准，避免组织或仓库自定义 subject 造成差异。见 [GitHub OIDC subject 规则](https://docs.github.com/en/actions/reference/security/oidc)。
+
+认证链路是 `GitHub OIDC → Azure 联合凭据 → 托管身份 → Marketplace Contributor → vsce`。Azure Reader 权限和 Marketplace Contributor 权限分别控制不同服务；Azure 登录成功不能替代 Publisher 授权。官方发布示例采用 Azure Pipelines，本项目结合 [Azure Login 的 GitHub OIDC 支持](https://github.com/Azure/login#login-with-openid-connect-oidc-recommended) 接入同一 Entra 认证方式，无需迁移 CI 平台。
+
+常见失败：`AADSTS700213` 通常表示 issuer、subject 或 audience 未精确匹配；Azure 找不到订阅时核对 Tenant、Subscription 和 Reader 范围；Azure 登录成功但 vsce 拒绝发布时，核对 profile ID 与 Publisher Contributor 成员授权。已发布的 `0.2.1` 不重复上传，认证检查通过后用后续版本验证实际发布。
+
 
 ## 2. 项目规范
 

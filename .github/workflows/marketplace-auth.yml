@@ -1,0 +1,89 @@
+name: Marketplace authentication
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Inspect the OIDC binding or verify configured Azure publishing rights
+        required: true
+        default: inspect
+        type: choice
+        options: [inspect, verify]
+
+permissions:
+  contents: read
+
+jobs:
+  authentication:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Inspect the actual OIDC binding
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const token = await core.getIDToken('api://AzureADTokenExchange');
+            const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString());
+            if (claims.iss !== 'https://token.actions.githubusercontent.com' ||
+                claims.aud !== 'api://AzureADTokenExchange' ||
+                claims.repository !== process.env.GITHUB_REPOSITORY ||
+                claims.environment !== 'marketplace') {
+              core.setFailed('Unexpected OIDC binding.');
+              return;
+            }
+            const credential = {
+              name: 'github-marketplace',
+              issuer: claims.iss,
+              subject: claims.sub,
+              audiences: [claims.aud],
+            };
+            require('fs').writeFileSync('federated-credential.json', JSON.stringify(credential, null, 2) + '\n');
+            await core.summary.addHeading('Azure federated credential binding')
+              .addCodeBlock(JSON.stringify(credential, null, 2), 'json')
+              .addRaw('\nThis binding contains no token. Use the exact subject in Azure.\n').write();
+      - uses: actions/upload-artifact@v4
+        with:
+          name: marketplace-federated-credential
+          path: federated-credential.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Validate Azure configuration
+        if: inputs.mode == 'verify'
+        uses: actions/github-script@v7
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        with:
+          script: |
+            for (const key of ['AZURE_CLIENT_ID', 'AZURE_TENANT_ID', 'AZURE_SUBSCRIPTION_ID']) {
+              if (!/^[0-9a-f-]{36}$/i.test(process.env[key] || '')) {
+                core.setFailed(`Configure ${key} before verifying Azure publishing.`);
+              }
+            }
+      - name: Sign in using workload identity federation
+        if: inputs.mode == 'verify'
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          audience: api://AzureADTokenExchange
+      - name: Resolve the Marketplace profile ID
+        if: inputs.mode == 'verify'
+        run: |
+          profile_id=$(az rest --url https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id --output tsv)
+          test -n "$profile_id"
+          echo "Marketplace profile ID: $profile_id" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        if: inputs.mode == 'verify'
+        with:
+          node-version: 22
+      - name: Verify Publisher permissions without uploading an extension
+        if: inputs.mode == 'verify'
+        run: npx --yes @vscode/vsce@4.0.0 verify-pat Mafty43211 --azure-credential
