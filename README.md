@@ -51,9 +51,11 @@ To build without installing, run `npm run build`. Install the resulting `.vsix` 
 3. For online problems, run **LeetCode Study Plan: Switch Endpoint**, **Switch Default Language**, and **Sign In** as needed. Sign in separately in this extension.
 4. Click a problem to preview it, then choose **Code Now**. The row's code action opens the solution directly. Local exercises open their existing workspace templates.
 5. Write the solution between `@lc code=start` and `@lc code=end`. Use **Study Plan: Test** and **Study Plan: Submit** above the code.
-6. Right-click a plan entry and select **Toggle Practice Completion** to update `PLAN.md`.
+6. LeetCode entries count as done after an accepted submission through this extension. For local exercises, right-click and select **Toggle Practice Completion** to update `PLAN.md`. LeetCode entries can also keep a separate manual checklist in that file.
 
 Plans default to `data/custom-plan.json`, with `data/notion-plan.json` as a fallback when the default file is absent. Use **Select Study Plan JSON** or `leetcodeStudyPlan.dailyPlan.path` to choose a workspace-relative file. See the [format guide](docs/study-plan.md#workspace-plan-format) to create a plan.
+
+Workspace study plans show an `AC` label and a green pass icon after a local submission through this extension returns Accepted, and include it in the group's done count. Review entries share that local history. Records are stored in VS Code workspace storage by workspace folder, site, and problem ID; they survive refresh, restart, sign-out, and later failed submissions. Browsing and refreshing plans do not query website acceptance history. Recording starts when this feature is enabled. Manual `PLAN.md` checkboxes do not imply local AC for LeetCode entries; local exercises still use those checkboxes for completion.
 
 ## Personal lists
 

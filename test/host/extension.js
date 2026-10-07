@@ -46,7 +46,20 @@ async function activate(context) {
   for (const command of ['leetcode.showProblem', 'leetcode.signin', 'leetcode.testSolution', 'leetcode.submitSolution']) {
     context.subscriptions.push(vscode.commands.registerCommand(command, () => upstreamCalls.push(command)));
   }
-  leetCodeExecutor.listProblems = async () => "";
+  let problemOutput = '';
+  let websiteProblemOutput = '';
+  let submissionAccepted = true;
+  leetCodeExecutor.listProblems = async (showLocked,translation,forceRefresh) => {
+    if (forceRefresh) problemOutput=websiteProblemOutput;
+    return problemOutput;
+  };
+  leetCodeExecutor.getCompaniesAndTags = async () => ({companies:{},tags:{}});
+  leetCodeExecutor.submitSolution = async filename => {
+    calls.push({kind:'submit',filename});
+    problemOutput = `    ${submissionAccepted ? 'v' : 'X'} [   1] Two Sum Easy (50.0 %)`;
+    if (submissionAccepted) websiteProblemOutput=problemOutput;
+    return submissionAccepted ? '  √ Accepted\n' : '  × Wrong Answer\n';
+  };
   let requirementsCalls = 0;
   leetCodeExecutor.meetRequirements = async () => { requirementsCalls++; return true; };
   leetCodeExecutor.switchEndpoint = async () => '';
@@ -80,7 +93,9 @@ async function activate(context) {
     holdNextRequest: () => {heldRequest=new Promise(resolve=>{releaseRequest=resolve;});},
     releaseRequest: () => releaseRequest(),
     setOffline: value => {offline=value;},
-    setListProblems: value => {listProblems=value;}
+    setListProblems: value => {listProblems=value;},
+    setWebsiteProblemOutput: value => {websiteProblemOutput=value;problemOutput=value;},
+    setSubmissionAccepted: value => {submissionAccepted=value;}
   };
 }
 module.exports = {activate};

@@ -2,6 +2,12 @@
 
 Notable changes to LeetCode Study Plan are recorded here. Versions follow the extension manifest; changes are grouped by behavior.
 
+## [0.2.2] - 2026-10-08
+
+### Added
+
+- Persist accepted submissions made through this extension locally and show them with an AC label, green pass icon, and done count in workspace study plans. Keep the separate manual checklist, preserve local history after restart/sign-out/failure, and ignore website acceptance history.
+
 ## [0.2.1] - 2026-10-05
 
 ### Added

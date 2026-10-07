@@ -50,6 +50,7 @@ const example=path.resolve(__dirname,'../examples/custom-plan');
 const plan=JSON.parse(fs.readFileSync(path.join(example,'data/custom-plan.json'),'utf8'));
 const markdown=fs.readFileSync(path.join(example,'PLAN.md'),'utf8');
 const vscode={
+  env:{appName:'Code'},
   EventEmitter:class { constructor(){this.event=()=>disposable;} fire(){} dispose(){} },
   Uri:{file:fsPath=>({fsPath,scheme:'file'})},
   RelativePattern:class {},
@@ -69,6 +70,7 @@ try {
     if(id==='fs-extra') return {pathExists:async()=>true,readJson:async()=>{runtime.jsonReads++;return plan;}};
     if(id==='../commands/show') return {showProblem:async()=>undefined,previewProblem:async()=>undefined};
     if(id==='../explorer/explorerNodeManager') return {explorerNodeManager:{getNodeById:()=>undefined}};
+    if(id==='../commands/plugin') return {getLeetCodeEndpoint:()=> 'leetcode-cn'};
     if(id==='../explorer/LeetCodeNode') return {LeetCodeNode:class {constructor(node){Object.assign(this,node);}}};
     return originalLoad.call(this,id,...args);
   };
@@ -96,7 +98,7 @@ test('50 PLAN.md edits debounce into one progress read without reloading JSON or
     assert.equal(scheduled.size,1);
     for(const callback of scheduled.values()) callback(); await turn();
     assert.equal(runtime.jsonReads,1);assert.equal(runtime.progressReads,2);assert.equal(runtime.sourceUpdates,1);
-    assert.equal(api.provider.isDone(first),true);assert.equal(api.provider.getChildren()[0],day,'progress must preserve existing Day/problem nodes');
+    assert.equal(api.provider.isPracticeCompleted(first),true);assert.equal(api.provider.getChildren()[0],day,'progress must preserve existing Day/problem nodes');
     await Promise.all(Array.from({length:50},()=>api.refresh()));
     assert.equal(runtime.jsonReads,2);assert.equal(runtime.sourceUpdates,2);
     runtime.text='## Day 1\n- [ ] 1. First\n- [ ] 1. Duplicate';
@@ -104,12 +106,12 @@ test('50 PLAN.md edits debounce into one progress read without reloading JSON or
     const fireScheduled=()=>{const callbacks=[...scheduled.values()];scheduled.clear();for(const callback of callbacks) callback();};
     fireScheduled();await turn();
     assert(runtime.view.message.includes('Duplicate'));
-    assert.equal(api.provider.isDone(api.provider.getChildren(api.provider.getChildren()[0])[0]),true,'invalid progress must keep valid completion data');
+    assert.equal(api.provider.isPracticeCompleted(api.provider.getChildren(api.provider.getChildren()[0])[0]),true,'invalid progress must keep valid completion data');
     runtime.text=markdown;
     runtime.changed({document:{uri:{fsPath:path.join(example,'PLAN.md')}}});
     fireScheduled();await turn();
     assert.equal(runtime.view.message,undefined,'a successful progress update must clear its previous error');
-    assert.equal(api.provider.isDone(api.provider.getChildren(api.provider.getChildren()[0])[0]),false);
+    assert.equal(api.provider.isPracticeCompleted(api.provider.getChildren(api.provider.getChildren()[0])[0]),false);
     assert.equal(runtime.jsonReads,2,'progress error recovery must not reload plan structure');
   } finally {
     for(const item of context.subscriptions) item.dispose();

@@ -30,9 +30,12 @@ import { LazyInitialization } from "./utils/LazyInitialization";
 import { TimerController } from "./timer/TimerController";
 import { initializePersonalLists } from "./personalLists/PersonalListsProvider";
 import { initializeDailyPlan } from "./dailyPlan/DailyPlanProvider";
+import { localSubmissionStore } from "./dailyPlan/LocalSubmissionStore";
 
 export async function activate(context: vscode.ExtensionContext): Promise<ReturnType<typeof initializeDailyPlan> & { timers: TimerController; personalLists: ReturnType<typeof initializePersonalLists> }> {
     globalState.initialize(context);
+    localSubmissionStore.initialize(context);
+    context.subscriptions.push(localSubmissionStore);
     const cli = new LazyInitialization(async () => {
         if (!await leetCodeExecutor.meetRequirements(context)) throw new Error("The environment doesn't meet requirements.");
         await leetCodeExecutor.switchEndpoint(plugin.getLeetCodeEndpoint());

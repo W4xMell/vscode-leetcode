@@ -6,7 +6,7 @@
 
 ## 1. 当前基线
 
-源码版本为 `0.2.1`，默认开发分支为 `master`。[GitHub Release](https://github.com/W4xMell/vscode-leetcode-study-plan/releases/tag/v0.2.1) 已自动上传；维护者已确认 Marketplace 的 PAT 上传验证成功。
+源码版本为 `0.2.2`，默认开发分支为 `master`。此前的 [v0.2.1 GitHub Release](https://github.com/W4xMell/vscode-leetcode-study-plan/releases/tag/v0.2.1) 已自动上传；维护者已确认 Marketplace 的 PAT 上传验证成功。
 
 - [现有 CI](../.github/workflows/build.yml) 在推送 `master`、`codex/**`、向 `master` 提交 PR 或手动触发时运行。
 - CI 使用 Node.js 22，在 Linux 和 Windows 上执行 `npm ci`、`npm test`、`npm run lint`、`npm run build`，并上传两个平台的 VSIX 构建产物。

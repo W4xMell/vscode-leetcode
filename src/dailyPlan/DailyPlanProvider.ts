@@ -8,6 +8,8 @@ import { IPracticeGroup } from "../timer/model";
 import * as show from "../commands/show";
 import { explorerNodeManager } from "../explorer/explorerNodeManager";
 import { LeetCodeNode } from "../explorer/LeetCodeNode";
+import { getLeetCodeEndpoint } from "../commands/plugin";
+import { localSubmissionStore, LocalSubmissionStore } from "./LocalSubmissionStore";
 import { RefreshQueue } from "../utils/RefreshQueue";
 import { parseProgress, IPlanDay, IPlanProblem, practiceKey, IProgressEntry, toLeetCodeProblem, validatePlan, workspacePath } from "./model";
 
@@ -22,6 +24,8 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
     private progress = new Map<string, IProgressEntry>();
     private readonly changed = new vscode.EventEmitter<PlanElement | undefined>();
     public readonly onDidChangeTreeData = this.changed.event;
+
+    constructor(private readonly submissions: LocalSubmissionStore = localSubmissionStore) { }
 
     public async refresh(): Promise<void> {
         // 完整读取成功后才替换当前视图，避免错误更新丢失已展示的题单。
@@ -63,6 +67,7 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
         this.changed.fire(undefined);
     }
     public getParent(element: PlanElement): PlanElement | undefined { return element.type === "problem" ? this.days.find((node) => node.day === element.day) : undefined; }
+    public refreshSubmissionStatus(): void { this.changed.fire(undefined); }
 
     public getTreeItem(element: PlanElement): vscode.TreeItem {
         if (element.type === "day") {
@@ -77,19 +82,28 @@ export class DailyPlanProvider implements vscode.TreeDataProvider<PlanElement>, 
         }
         const p = element.problem;
         const done = this.isDone(element);
+        const accepted = this.isAccepted(element);
         const item = new vscode.TreeItem(p.kind === "leetcode" ? `[${p.leetcodeId}] ${p.title.replace(/^\d+[｜.]\s*/, "")}` : `Local exercise: ${p.title}`);
         item.id = `daily-day-${element.day.day}-problem-${p.order}`;
-        item.contextValue = done ? "dailyPlanProblemDone" : "dailyPlanProblem";
+        item.contextValue = this.isPracticeCompleted(element) ? "dailyPlanProblemDone" : "dailyPlanProblem";
         item.description = p.kind === "custom" ? "Local exercise" : `${p.difficulty}${p.paidOnly ? " · Premium" : ""}${p.previousDays?.length ? " · Review" : ""}`;
-        item.iconPath = new vscode.ThemeIcon(done ? "pass-filled" : p.kind === "custom" ? "beaker" : p.paidOnly ? "lock" : "circle-outline");
+        if (accepted) item.description += " · AC";
+        item.iconPath = accepted ? new vscode.ThemeIcon("pass-filled", new vscode.ThemeColor("testing.iconPassed")) :
+            new vscode.ThemeIcon(done ? "pass-filled" : p.kind === "custom" ? "beaker" : p.paidOnly ? "lock" : "circle-outline");
         item.command = { command: "leetcodeStudyPlan.dailyPlan.preview", title: "Preview Problem", arguments: [element] };
-        item.tooltip = `${p.title}\n${done ? "Practice completed" : "Practice pending"}\n` +
+        item.tooltip = `${p.title}\n` + (p.kind === "leetcode" ? `${accepted ? "Accepted (AC) via this extension" : "No local accepted submission"}\n` : `${done ? "Practice completed" : "Practice pending"}\n`) +
+            (p.kind === "leetcode" ? `${this.isPracticeCompleted(element) ? "Practice checked in PLAN.md" : "Practice unchecked in PLAN.md"}\n` : "") +
             (p.kind === "leetcode" ? "Click to preview; use Code Now to start solving." : "Click to open the local exercise template.") + (p.note ? `\n${p.note}` : "");
         return item;
     }
 
-    public isDone(element: IProblemElement): boolean { return this.progress.get(practiceKey(element.day.day, element.problem.order))?.done || false; }
+    public isDone(element: IProblemElement): boolean { return element.problem.kind === "leetcode" ? this.isAccepted(element) : this.isPracticeCompleted(element); }
+    public isPracticeCompleted(element: IProblemElement): boolean { return this.progress.get(practiceKey(element.day.day, element.problem.order))?.done || false; }
     public dispose(): void { this.changed.dispose(); }
+
+    private isAccepted(element: IProblemElement): boolean {
+        return Boolean(this.root && element.problem.kind === "leetcode" && this.submissions.isAccepted(this.root, getLeetCodeEndpoint(), String(element.problem.leetcodeId)));
+    }
 }
 
 // 原插件缓存优先提供账号状态、标签和题名；离线题单也可独立展示。
@@ -189,6 +203,7 @@ export function initializeDailyPlan(context: vscode.ExtensionContext, timers?: T
         await refresh();
     };
     let watchers: vscode.FileSystemWatcher[] = [];
+    const statusChanged = (): void => provider.refreshSubmissionStatus();
     const updateWatchers = (): void => {
         for (const watcher of watchers) watcher.dispose();
         watchers = [vscode.workspace.createFileSystemWatcher("**/PLAN.md")];
@@ -212,6 +227,7 @@ export function initializeDailyPlan(context: vscode.ExtensionContext, timers?: T
         }
     };
     context.subscriptions.push(provider, view,
+        localSubmissionStore.onDidChange(statusChanged),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.startGroupTimer", guarded(async (element) => { if (element) await timers?.startGroup(group(element.day)); })),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.refresh", guarded(refresh)),
         vscode.commands.registerCommand("leetcodeStudyPlan.dailyPlan.preview", guarded((element) => openProblem(element, false))),
@@ -223,6 +239,7 @@ export function initializeDailyPlan(context: vscode.ExtensionContext, timers?: T
         vscode.workspace.onDidChangeWorkspaceFolders(() => { updateWatchers(); backgroundRefresh(); }),
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration("leetcodeStudyPlan.dailyPlan.path")) { updateWatchers(); backgroundRefresh(); }
+            if (event.affectsConfiguration("leetcodeStudyPlan.endpoint")) statusChanged();
         }),
         vscode.workspace.onDidChangeTextDocument((event) => { if (provider.root && event.document.uri.fsPath === path.join(provider.root, "PLAN.md")) backgroundRefresh(1); })
     );

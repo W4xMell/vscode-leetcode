@@ -31,6 +31,11 @@
     "configuration": {
       "title": "Daily plan test",
       "properties": {
+        "leetcodeStudyPlan.hideSolved": {
+          "type": "boolean",
+          "default": false,
+          "scope": "application"
+        },
         "leetcodeStudyPlan.dailyPlan.path": {
           "type": "string",
           "default": "data/custom-plan.json",

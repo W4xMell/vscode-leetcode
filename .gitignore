@@ -69,3 +69,5 @@ out
 SHA256SUMS
 release-metadata.json
 release-notes.md
+
+.vscode/

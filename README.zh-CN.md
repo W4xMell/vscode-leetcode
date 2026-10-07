@@ -51,9 +51,11 @@ npm run install:extension -- --profile "Practice"
 3. 使用在线题目时，按需执行 `LeetCode Study Plan: Switch Endpoint`、`Switch Default Language` 和 `Sign In`。账号需要在本插件中单独登录。
 4. 点击题目打开预览，再选择 Code Now。题目行的代码操作可直接打开解题文件；本地练习打开已有工作区模板。
 5. 在 `@lc code=start` 与 `@lc code=end` 之间编写解法，使用代码上方的 `Study Plan: Test` 和 `Study Plan: Submit`。
-6. 右键题目，选择 `Toggle Practice Completion`，更新 `PLAN.md`。
+6. 力扣题在本地插件提交并返回 AC 后显示为做过；本地变式练习可右键选择 `Toggle Practice Completion`，更新 `PLAN.md`。力扣题也可手动记录 `PLAN.md` 清单，该勾选独立于提交状态。
 
 默认读取 `data/custom-plan.json`；默认文件不存在时，兼容读取 `data/notion-plan.json`。通过 `Select Study Plan JSON` 或 `leetcodeStudyPlan.dailyPlan.path` 选择工作区内的 JSON 文件。创建题单时，参考[题单格式](docs/study-plan.md#workspace-plan-format)。
+
+自定义题单中的力扣题根据本地插件提交并返回 Accepted 的记录显示 `AC` 标记和绿色通过图标，并计入分组的已做数量。相同题目在多个复习日共享本地 AC 记录。记录按工作区文件夹、站点和题号保存在 VS Code 的工作区本地存储中，刷新、重启、退出登录及后续失败提交均保留已通过状态。题单显示与刷新不查询网站历史 AC；新记录从本功能启用后开始积累。`PLAN.md` 的手动勾选不会使力扣题显示为已 AC，本地变式练习仍按勾选统计完成状态。
 
 ## 网站自建题单
 
